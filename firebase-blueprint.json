@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "ProductionEntry": {
+      "title": "Production Entry",
+      "description": "Represents a single production record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "machine": { "type": "string" },
+        "shift": { "type": "string" },
+        "operator": { "type": "string" },
+        "product": { "type": "string" },
+        "netWeight": { "type": "number" },
+        "borraWeight": { "type": "number" },
+        "ecoAWeight": { "type": "number" },
+        "ecoBProdWeight": { "type": "number" },
+        "ecoBMaintWeight": { "type": "number" },
+        "stopMaint": { "type": "number" },
+        "stopProcess": { "type": "number" },
+        "stopOther": { "type": "number" },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "date", "machine", "shift", "operator", "product", "netWeight", "userId"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Represents an employee in the system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "shift": { "type": "string" },
+        "machine": { "type": "string" },
+        "sector": { "type": "string" },
+        "status": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "userId": { "type": "string" }
+      }
+    },
+    "PersonnelLog": {
+      "title": "Personnel Log",
+      "description": "Logs changes in personnel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "user": { "type": "string" },
+        "userId": { "type": "string" }
+      }
+    },
+    "SystemUser": {
+      "title": "System User",
+      "description": "User with access to the system.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "registration": { "type": "string" },
+        "role": { "type": "string" },
+        "password": { "type": "string" },
+        "isFirstAccess": { "type": "boolean" },
+        "permissions": { "type": "object" }
+      }
+    },
+    "Settings": {
+      "title": "Global Settings",
+      "description": "Configuration for the system.",
+      "type": "object",
+      "properties": {
+        "operators": { "type": "array" },
+        "availableRoles": { "type": "array" },
+        "goals": { "type": "object" },
+        "systemName": { "type": "string" },
+        "loginSystemName": { "type": "string" },
+        "loginSystemSubtitle": { "type": "string" },
+        "systemLogo": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "productionEntries": { "schema": "ProductionEntry", "description": "Production records" },
+    "employees": { "schema": "Employee", "description": "Employee records" },
+    "personnelLogs": { "schema": "PersonnelLog", "description": "Personnel change logs" },
+    "system_users": { "schema": "SystemUser", "description": "System access users" },
+    "settings": { "schema": "Settings", "description": "Global settings" },
+    "shifts": { "schema": "object", "description": "Available shifts" }
+  }
+}
