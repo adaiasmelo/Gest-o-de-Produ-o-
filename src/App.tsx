@@ -288,8 +288,14 @@ export const App: React.FC = () => {
 
   const handleLogout = () => {
     setLoggedUser(null);
+    setLoginMatricula('');
+    setLoginPass('');
+    setConfirmLoginPass('');
+    setDiscoveredUser(null);
     localStorage.removeItem('manupackaging_user');
   };
+
+  const lastBiometricAttemptRef = useRef<string>('');
 
   useEffect(() => {
     if (loginMatricula && loginMatricula.length >= 3) {
@@ -297,14 +303,18 @@ export const App: React.FC = () => {
       if (user) {
         setDiscoveredUser(user);
         // Automatically trigger biometrics if user has ID and login isn't complete
-        if (user.biometricId && biometricSupported && !loggedUser) {
+        // Use a ref to avoid repeating the prompt while typing the same matricula
+        if (user.biometricId && biometricSupported && !loggedUser && lastBiometricAttemptRef.current !== loginMatricula) {
+          lastBiometricAttemptRef.current = loginMatricula;
           handleBiometricLogin(user);
         }
       } else {
         setDiscoveredUser(null);
+        lastBiometricAttemptRef.current = '';
       }
     } else {
       setDiscoveredUser(null);
+      lastBiometricAttemptRef.current = '';
     }
   }, [loginMatricula, systemUsers, biometricSupported, !!loggedUser]);
 
