@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Save, Edit2, Package, Layers, Trash2, Clock, Wrench, CalendarX, Camera, Loader2 } from 'lucide-react';
-import { ProductionEntry, Shift } from '../types';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Save, Edit2, Package, Layers, Trash2, Clock, Wrench, CalendarX, Camera, Loader2, Search } from 'lucide-react';
+import { ProductionEntry, Shift, Collaborator } from '../types';
 import { extractProductionData } from '../services/aiService';
 
 interface LaunchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (entry: Omit<ProductionEntry, 'id'> & { id?: string }) => void;
-  operators: string[];
+  collaborators: Collaborator[];
   activeMachines: string[];
   availableShifts: Shift[];
   initialData?: ProductionEntry | null;
@@ -20,7 +20,7 @@ const getYesterdayStr = () => {
   return d.toLocaleDateString('sv-SE');
 };
 
-const LaunchModal: React.FC<LaunchModalProps> = ({ isOpen, onClose, onSave, operators, activeMachines, availableShifts, initialData }) => {
+const LaunchModal: React.FC<LaunchModalProps> = ({ isOpen, onClose, onSave, collaborators, activeMachines, availableShifts, initialData }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -51,6 +51,16 @@ const LaunchModal: React.FC<LaunchModalProps> = ({ isOpen, onClose, onSave, oper
     noWorkReason: '',
   });
 
+  const [opSearchTerm, setOpSearchTerm] = useState('');
+  const [isOpDropdownOpen, setIsOpDropdownOpen] = useState(false);
+
+  const filteredOperators = useMemo(() => {
+    if (!opSearchTerm) return collaborators;
+    return collaborators.filter(c => 
+      c.name.toLowerCase().includes(opSearchTerm.toLowerCase())
+    );
+  }, [collaborators, opSearchTerm]);
+
   const isErema = formData.machine.toLowerCase().includes('erema');
 
   useEffect(() => {
@@ -58,6 +68,7 @@ const LaunchModal: React.FC<LaunchModalProps> = ({ isOpen, onClose, onSave, oper
       setPendingEntries([]);
       setCurrentIndex(0);
       if (initialData) {
+        setOpSearchTerm(initialData.operator);
         setFormData({
           date: initialData.date,
           operator: initialData.operator,
@@ -428,16 +439,52 @@ const LaunchModal: React.FC<LaunchModalProps> = ({ isOpen, onClose, onSave, oper
               <input type="date" name="date" value={formData.date} onChange={handleChange} className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
             </div>
             {!formData.isNoWorkDay && (
-              <div>
+              <div className="relative">
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Operador</label>
-                <input 
-                  type="text" 
-                  name="operator" 
-                  value={formData.operator} 
-                  onChange={handleChange} 
-                  placeholder="Nome do operador..."
-                  className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20" 
-                />
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={opSearchTerm} 
+                    onChange={e => {
+                      setOpSearchTerm(e.target.value);
+                      setIsOpDropdownOpen(true);
+                      setFormData(prev => ({ ...prev, operator: e.target.value }));
+                    }} 
+                    onFocus={() => setIsOpDropdownOpen(true)}
+                    placeholder="Nome do operador..."
+                    className="w-full mt-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
+
+                  {isOpDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsOpDropdownOpen(false)}></div>
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
+                        {filteredOperators.length > 0 ? (
+                          filteredOperators.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, operator: c.name }));
+                                setOpSearchTerm(c.name);
+                                setIsOpDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                            >
+                              <p className="text-xs font-black text-slate-700">{c.name}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase">{c.role}</p>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-6 text-center text-[10px] font-bold text-slate-400 italic">
+                            Operador não encontrado.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>

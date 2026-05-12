@@ -5,7 +5,7 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone
 } from 'lucide-react';
 import { 
   Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -15,13 +15,13 @@ import html2canvas from 'html2canvas';
 import { db, auth, OperationType, handleFirestoreError, seedInitialData } from './lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
-import { ProductionEntry, Shift, Employee, PersonnelLog, SystemUser, UserPermissions } from './types';
+import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions } from './types';
 import { INITIAL_DATA, GOAL_VALUE, DEFAULT_OPERATORS, INITIAL_EMPLOYEES, INITIAL_LOGS } from './constants';
+import { isBiometricAvailable, registerBiometrics, authenticateBiometrics } from './services/biometricService';
 import LaunchModal from './components/LaunchModal';
 import EmployeeModal from './components/EmployeeModal';
+import CollaboratorModal from './components/CollaboratorModal';
 import HistoryModal from './components/HistoryModal';
-import OperatorModal from './components/OperatorModal';
-import RoleModal from './components/RoleModal';
 import ShiftModal from './components/ShiftModal';
 import DatabaseModal from './components/DatabaseModal';
 import { Database } from 'lucide-react';
@@ -75,6 +75,7 @@ export const App: React.FC = () => {
   const [operators, setOperators] = useState<string[]>(DEFAULT_OPERATORS);
   const [availableRoles, setAvailableRoles] = useState<string[]>(['Operador 1', 'Operador 2', 'Auxiliar 1', 'Auxiliar 2', 'Líder', 'Supervisor', 'Gerente']);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [personnelLogs, setPersonnelLogs] = useState<PersonnelLog[]>([]);
   const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
   
@@ -82,6 +83,8 @@ export const App: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'filters' | 'goals' | 'config' | 'system'>('filters');
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false);
+  const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -101,6 +104,10 @@ export const App: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExtraMenuOpen, setIsExtraMenuOpen] = useState(false);
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
+  
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
+  const [biometricUser, setBiometricUser] = useState<SystemUser | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const personnelRef = useRef<HTMLDivElement>(null);
@@ -120,6 +127,10 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    isBiometricAvailable().then(setBiometricSupported);
+  }, []);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     const unsubProduction = onSnapshot(collection(db, 'productionEntries'), (snap) => {
@@ -131,6 +142,11 @@ export const App: React.FC = () => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
       setEmployees(data);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'employees'));
+
+    const unsubCollaborators = onSnapshot(collection(db, 'collaborators'), (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Collaborator));
+      setCollaborators(data);
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'collaborators'));
 
     const unsubLogs = onSnapshot(collection(db, 'personnelLogs'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PersonnelLog));
@@ -172,12 +188,105 @@ export const App: React.FC = () => {
     return () => {
       unsubProduction();
       unsubEmployees();
+      unsubCollaborators();
       unsubLogs();
       unsubShifts();
       unsubUsers();
       unsubSettings();
     };
   }, [currentUser]);
+
+  // Auto-migrar funcionários existentes para colaboradores se não existirem
+  const migrationRef = useRef(false);
+  useEffect(() => {
+    if (!settingsLoaded || employees.length === 0 || isInitializing || migrationRef.current) return;
+
+    const migration = async () => {
+      migrationRef.current = true;
+      const currentCollaborators = collaborators; // snapshot of current state
+      
+      // Cleanup Duplicates if they already exist
+      const nameGroups = new Map<string, Collaborator[]>();
+      currentCollaborators.forEach(c => {
+        if (!nameGroups.has(c.name)) nameGroups.set(c.name, []);
+        nameGroups.get(c.name)!.push(c);
+      });
+
+      for (const [name, cols] of nameGroups.entries()) {
+        if (cols.length > 1) {
+          // Keep the first one, delete others
+          console.log(`Cleaning up duplicates for ${name}`);
+          for (let i = 1; i < cols.length; i++) {
+            await deleteDoc(doc(db, 'collaborators', cols[i].id));
+          }
+        }
+      }
+
+      // Track names being added to avoid duplicates within the same migration loop
+      const namesAdded = new Set<string>(currentCollaborators.map(c => c.name));
+
+      for (const emp of employees) {
+        if (!emp.name || emp.name === 'VAGA DISPONÍVEL' || emp.name === 'Em Contratação') continue;
+        
+        if (!namesAdded.has(emp.name)) {
+          try {
+            const colRef = doc(collection(db, 'collaborators'));
+            const colId = colRef.id;
+            await setDoc(colRef, {
+              id: colId,
+              name: emp.name,
+              role: emp.role || 'Colaborador',
+              updatedAt: new Date().toISOString()
+            });
+            namesAdded.add(emp.name);
+            
+            // Also link the employee to this new collaborator ID
+            await setDoc(doc(db, 'employees', emp.id), { collaboratorId: colId }, { merge: true });
+          } catch (err) {
+            console.error('Migration error for', emp.name, err);
+          }
+        } else if (!emp.collaboratorId) {
+          // Link existing collaborator to employee if ID is missing
+          const existingCol = currentCollaborators.find(c => c.name === emp.name);
+          if (existingCol) {
+            await setDoc(doc(db, 'employees', emp.id), { collaboratorId: existingCol.id }, { merge: true });
+          }
+        }
+      }
+    };
+    
+    migration().catch(console.error);
+  }, [settingsLoaded, employees.length > 0, isInitializing]);
+
+  const formatDisplayName = (fullName: string) => {
+    if (!fullName || fullName === 'VAGA DISPONÍVEL') return fullName;
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) return `${parts[0]} Junior`;
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  };
+
+  const handleSaveCollaborator = async (data: Partial<Collaborator>) => {
+    try {
+      const colRef = data.id ? doc(db, 'collaborators', data.id) : doc(collection(db, 'collaborators'));
+      await setDoc(colRef, {
+        id: colRef.id,
+        ...data,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      // Update names in employee slots if they were changed
+      if (data.id && data.name) {
+        const affectedEmployees = employees.filter(e => e.collaboratorId === data.id);
+        for (const emp of affectedEmployees) {
+          if (emp.name !== data.name) {
+            await setDoc(doc(db, 'employees', emp.id), { name: data.name }, { merge: true });
+          }
+        }
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'collaborators');
+    }
+  };
 
   const handleLogout = () => {
     setLoggedUser(null);
@@ -224,9 +333,54 @@ export const App: React.FC = () => {
     if (user.password === pass) {
       setLoggedUser(user);
       localStorage.setItem('manupackaging_user', JSON.stringify(user));
+      
+      // Check if user should be prompted to register biometrics
+      if (biometricSupported && !user.biometricId) {
+        setBiometricUser(user);
+        setShowBiometricPrompt(true);
+      }
     } else {
       alert('Senha incorreta.');
     }
+  };
+
+  const handleBiometricLogin = async () => {
+    if (!loginMatricula) {
+      alert('Por favor, informe sua matrícula primeiro.');
+      return;
+    }
+    const user = systemUsers.find(u => u.registration === loginMatricula);
+    if (!user || !user.biometricId) {
+      alert('Biometria não cadastrada para esta matrícula.');
+      return;
+    }
+
+    const success = await authenticateBiometrics(user.biometricId);
+    if (success) {
+      setLoggedUser(user);
+      localStorage.setItem('manupackaging_user', JSON.stringify(user));
+    } else {
+      alert('Falha na autenticação biométrica.');
+    }
+  };
+
+  const handleRegisterBiometrics = async () => {
+    if (!biometricUser) return;
+    
+    const biometricId = await registerBiometrics(biometricUser);
+    if (biometricId) {
+      try {
+        const updated = { ...biometricUser, biometricId };
+        await setDoc(doc(db, 'system_users', biometricUser.id), updated);
+        setLoggedUser(updated);
+        localStorage.setItem('manupackaging_user', JSON.stringify(updated));
+        alert('Biometria cadastrada com sucesso!');
+      } catch (err) {
+        console.error('Error saving biometric data:', err);
+      }
+    }
+    setShowBiometricPrompt(false);
+    setBiometricUser(null);
   };
 
   const handleSaveSettings = async () => {
@@ -911,7 +1065,7 @@ export const App: React.FC = () => {
       }} className={`flex items-center justify-between p-2.5 rounded-xl transition-all border cursor-pointer ${isVacant ? (isHiring ? 'bg-orange-50/40 border-orange-200' : 'bg-red-50/10 border-dashed border-red-100') : 'bg-white border-slate-100 hover:border-blue-400 shadow-sm'}`}>
         <div className="flex flex-col gap-0">
           <span className={`text-[13px] font-bold truncate max-w-[150px] slot-name ${isVacant ? (isHiring ? 'text-orange-600' : 'text-slate-400 italic') : 'text-slate-800'}`}>
-            {isHiring ? `Em Contratação` : !emp ? `(Vaga)` : emp.name}
+            {isHiring ? `Em Contratação` : !emp ? `(Vaga)` : formatDisplayName(emp.name)}
           </span>
           {isVacant && <span className="text-[9px] font-black text-slate-400/50 uppercase tracking-tighter slot-role">{label || role}</span>}
         </div>
@@ -1076,12 +1230,32 @@ export const App: React.FC = () => {
                 >
                   {isInitializing ? 'Carregando...' : 'Entrar no Sistema'} <ChevronRight size={18} />
                 </button>
+
+                {biometricSupported && (
+                  <button 
+                    onClick={handleBiometricLogin}
+                    className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 border border-slate-200"
+                  >
+                    <Fingerprint size={18} className="text-blue-600" /> Acesso Biométrico / Digital
+                  </button>
+                )}
              </div>
            ) : (
              <div className="space-y-6">
                 <div className="bg-amber-50 p-5 rounded-[1.5rem] border border-amber-100 mb-2">
                   <p className="text-xs font-bold text-amber-700 text-center leading-relaxed">Olá, <span className="text-slate-900 font-black">{tempUser?.name}</span>!<br/>Este é o seu primeiro acesso. Por favor, crie uma senha de segurança.</p>
                 </div>
+                {biometricSupported && (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 shrink-0">
+                      <Smartphone size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-blue-800 uppercase leading-tight">Configurar Biometria</p>
+                      <p className="text-[9px] font-bold text-blue-600/70 uppercase tracking-tighter mt-0.5">Ative o acesso rápido por digital ou rosto</p>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Crie sua Senha</label>
@@ -1116,8 +1290,15 @@ export const App: React.FC = () => {
                         try {
                           const updated = { ...tempUser, password: newPassword, isFirstAccess: false };
                           await setDoc(doc(db, 'system_users', tempUser.id), updated);
+                          
                           setLoggedUser(updated);
                           localStorage.setItem('manupackaging_user', JSON.stringify(updated));
+
+                          // Prompt for biometrics after first access
+                          if (biometricSupported) {
+                            setBiometricUser(updated);
+                            setShowBiometricPrompt(true);
+                          }
                         } catch (err) {
                           alert('Erro ao salvar senha.');
                         }
@@ -1132,16 +1313,44 @@ export const App: React.FC = () => {
            )}
 
            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col gap-4 items-center">
-              <button 
-                onClick={handleRestoreData}
-                disabled={isInitializing}
-                className="text-[10px] font-bold text-slate-400 hover:text-blue-600 transition-all flex items-center justify-center gap-2 uppercase tracking-widest active:scale-95"
-              >
-                <RotateCcw size={12} /> Restaurar Dados Iniciais
-              </button>
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">© 2026 {loginSystemName} • Produção</p>
            </div>
         </div>
+
+        {/* Biometric Registration Prompt Modal */}
+        {showBiometricPrompt && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-6">
+              <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-inner border border-blue-100">
+                <Fingerprint size={40} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Ativar Biometria?</h3>
+                <p className="text-xs text-slate-500 font-norma leading-relaxed">
+                  Deseja cadastrar sua digital ou senha do aparelho para acessos futuros mais rápidos neste dispositivo?
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={handleRegisterBiometrics}
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-200"
+                >
+                  Sim, Cadastrar Agora
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowBiometricPrompt(false);
+                    setBiometricUser(null);
+                  }}
+                  className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all"
+                >
+                  Agora Não
+                </button>
+              </div>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter italic">Você poderá configurar isso mais tarde no perfil.</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1549,6 +1758,13 @@ export const App: React.FC = () => {
                     <div className="fixed inset-0 z-40" onClick={() => setIsExtraMenuOpen(false)}></div>
                     <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top">
                       <button 
+                        onClick={() => { setIsExtraMenuOpen(false); setIsCollaboratorModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors border-b border-slate-50"
+                      >
+                        <UserPlus size={18} className="text-blue-600" />
+                        Cadastrar Colaborador
+                      </button>
+                      <button 
                         onClick={() => { setIsExtraMenuOpen(false); exportPersonnelToPDF(); }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors"
                       >
@@ -1868,6 +2084,8 @@ export const App: React.FC = () => {
         setIsRoleModalOpen={setIsRoleModalOpen}
         setIsShiftModalOpen={setIsShiftModalOpen}
         downloadBackup={downloadBackup}
+        handleRestoreData={handleRestoreData}
+        isInitializing={isInitializing}
         fileInputRef={fileInputRef}
         systemName={systemName}
         setSystemName={setSystemName}
@@ -1918,7 +2136,7 @@ export const App: React.FC = () => {
           alert("Ocorreu um erro ao salvar o lançamento.");
         }
         setEditingEntry(null);
-      }} operators={operators} activeMachines={activeMachines} availableShifts={availableShifts} initialData={editingEntry} />
+      }} collaborators={collaborators} activeMachines={activeMachines} availableShifts={availableShifts} initialData={editingEntry} />
       
       <EmployeeModal isOpen={isEmployeeModalOpen} onClose={() => { setIsEmployeeModalOpen(false); setSelectedEmployee(null); setSelectedSlot(null); }} onSave={async (data, action, details) => {
           try {
@@ -1926,6 +2144,8 @@ export const App: React.FC = () => {
             const empId = data.id || Math.random().toString(36).substr(2, 9);
             
             if (action === 'Contratação') {
+              // Quando salva um colaborador, garante que ele existe na base central se for adicionado por nome manualmente (embora agora use seleção)
+              // Mas aqui o EmployeeModal já retorna o collaboratorId se selecionado.
               await setDoc(doc(db, 'employees', empId), { ...data, id: empId, updatedAt: now, userId: currentUser.uid });
             } else if (action === 'Exclusão') {
               await deleteDoc(doc(db, 'employees', empId));
@@ -1954,10 +2174,8 @@ export const App: React.FC = () => {
           } catch(error) {
             console.error(error);
           }
-      }} availableShifts={availableShifts} availableMachines={activeMachines} availableRoles={availableRoles} initialData={selectedEmployee} slotInfo={selectedSlot} />
+      }} availableShifts={availableShifts} availableMachines={activeMachines} availableRoles={availableRoles} collaborators={collaborators} initialData={selectedEmployee} slotInfo={selectedSlot} />
       
-      <OperatorModal isOpen={isOperatorModalOpen} onClose={() => setIsOperatorModalOpen(false)} operators={operators} onUpdate={setOperators} />
-      <RoleModal isOpen={isRoleModalOpen} onClose={() => setIsRoleModalOpen(false)} roles={availableRoles} onUpdate={setAvailableRoles} />
       <ShiftModal isOpen={isShiftModalOpen} onClose={() => setIsShiftModalOpen(false)} onSave={async (s) => {
         try {
           const shiftId = Math.random().toString(36).substr(2, 9);
@@ -1980,6 +2198,12 @@ export const App: React.FC = () => {
           isOpen={isDatabaseModalOpen}
           onClose={() => setIsDatabaseModalOpen(false)}
           employees={employees}
+          collaborators={collaborators}
+          onEditCollaborator={(col) => {
+            console.log('Editing collaborator:', col);
+            setSelectedCollaborator(col);
+            setIsCollaboratorModalOpen(true);
+          }}
           availableRoles={availableRoles}
           availableShifts={availableShifts.map(s => s.name)}
           machines={activeMachines}
@@ -2055,6 +2279,17 @@ export const App: React.FC = () => {
             }
           }}
         />
+      )}
+      {isCollaboratorModalOpen && (
+        <div className="fixed inset-0 z-[300]">
+          <CollaboratorModal
+            isOpen={isCollaboratorModalOpen}
+            onClose={() => { setIsCollaboratorModalOpen(false); setSelectedCollaborator(null); }}
+            onSave={handleSaveCollaborator}
+            initialData={selectedCollaborator}
+            availableRoles={availableRoles}
+          />
+        </div>
       )}
     </div>
   );
@@ -2248,6 +2483,8 @@ const SettingsModal: React.FC<{
   setIsRoleModalOpen: (open: boolean) => void;
   setIsShiftModalOpen: (open: boolean) => void;
   downloadBackup: () => void;
+  handleRestoreData: () => Promise<void>;
+  isInitializing: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
   systemName: string;
   setSystemName: (name: string) => void;
@@ -2263,7 +2500,7 @@ const SettingsModal: React.FC<{
   filterOperator, setFilterOperator, filterDay, setFilterDay, dashboardMonth, setDashboardMonth,
   operators, goals, setGoals,
   setIsUserManagementOpen, setIsOperatorModalOpen, setIsRoleModalOpen, setIsShiftModalOpen,
-  downloadBackup, fileInputRef,
+  downloadBackup, handleRestoreData, isInitializing, fileInputRef,
   systemName, setSystemName, loginSystemName, setLoginSystemName, loginSystemSubtitle, setLoginSystemSubtitle, systemLogo, setSystemLogo, isAdminUser
 }) => {
   if (!isOpen) return null;
@@ -2401,17 +2638,6 @@ const SettingsModal: React.FC<{
                     <ChevronRight size={20} className="opacity-40 group-hover:opacity-100" />
                  </button>
                )}
-               
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button onClick={() => { onClose(); setIsOperatorModalOpen(true); }} className="p-6 bg-white border border-slate-200 rounded-[2rem] flex flex-col items-center text-center gap-3 hover:border-blue-400 hover:shadow-lg transition-all group">
-                    <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Users size={28}/></div>
-                    <p className="text-[11px] font-black uppercase text-slate-800 tracking-widest">Operadores</p>
-                  </button>
-                  <button onClick={() => { onClose(); setIsRoleModalOpen(true); }} className="p-6 bg-white border border-slate-200 rounded-[2rem] flex flex-col items-center text-center gap-3 hover:border-indigo-400 hover:shadow-lg transition-all group">
-                    <div className="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Briefcase size={28}/></div>
-                    <p className="text-[11px] font-black uppercase text-slate-800 tracking-widest">Funções</p>
-                  </button>
-               </div>
 
                <button onClick={() => { onClose(); setIsShiftModalOpen(true); }} className="w-full group px-8 py-6 bg-white border border-slate-200 rounded-[2rem] flex items-center justify-between hover:border-orange-400 hover:shadow-lg transition-all">
                   <div className="flex items-center gap-6">
@@ -2423,6 +2649,11 @@ const SettingsModal: React.FC<{
                   </div>
                   <ChevronRight size={20} className="text-slate-300" />
                </button>
+
+               <div className="p-8 bg-blue-50 rounded-[2rem] border border-blue-100 text-center space-y-2">
+                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Gestão de Pessoal</p>
+                 <p className="text-xs font-bold text-slate-500">As configurações de operadores e funções foram unificadas no <span className="text-blue-700">Cadastro de Colaboradores</span> disponível no Menu Extra da tela de Pessoal.</p>
+               </div>
             </div>
           )}
 
@@ -2513,6 +2744,20 @@ const SettingsModal: React.FC<{
                   <div className="space-y-1">
                     <p className="text-[11px] font-black uppercase tracking-widest italic">Restaurar Backup</p>
                     <p className="text-[9px] font-bold opacity-70">Carregar base salva</p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <button 
+                  onClick={handleRestoreData}
+                  disabled={isInitializing}
+                  className="w-full group p-6 bg-red-50 text-red-700 rounded-[2rem] border border-red-100 flex flex-col items-center text-center gap-3 hover:bg-red-600 hover:text-white hover:shadow-xl transition-all disabled:opacity-50"
+                >
+                  <div className="w-14 h-14 bg-white text-red-600 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform shadow-sm"><RotateCcw size={28}/></div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-black uppercase tracking-widest italic">Restaurar Dados Iniciais</p>
+                    <p className="text-[9px] font-bold opacity-70">CUIDADO: Apaga tudo e volta ao padrão</p>
                   </div>
                 </button>
               </div>

@@ -44,10 +44,21 @@ export interface Shift {
   type: 'Diurno' | 'Noturno';
 }
 
+export interface Collaborator {
+  id: string;
+  name: string;
+  role: string;
+  birthDate?: string;
+  address?: string;
+  contact?: string;
+  updatedAt: string;
+}
+
 export type EmployeeStatus = 'Ativo' | 'Férias' | 'Atestado' | 'Desligado' | 'Em Contratação';
 
 export interface Employee {
   id: string;
+  collaboratorId?: string; // Link to the central database
   name: string;
   role: string; // Changed from strict union to string to allow dynamic roles
   sector: string; // Extrusão, Reciclagem, Fita
@@ -120,5 +131,6 @@ export interface SystemUser {
   role: string;
   password?: string;
   isFirstAccess: boolean;
+  biometricId?: string;
   permissions?: UserPermissions;
 }

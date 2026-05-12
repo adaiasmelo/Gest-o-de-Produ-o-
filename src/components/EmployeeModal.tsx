@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Save, Briefcase, MapPin, UserX, Stethoscope, Plane, Trash2 } from 'lucide-react';
-import { Shift, Employee } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, UserPlus, Save, Briefcase, MapPin, UserX, Stethoscope, Plane, Trash2, Search } from 'lucide-react';
+import { Shift, Employee, Collaborator } from '../types';
 
 interface EmployeeModalProps {
   isOpen: boolean;
@@ -9,13 +9,14 @@ interface EmployeeModalProps {
   availableShifts: Shift[];
   availableMachines: string[];
   availableRoles: string[]; // Added roles prop
+  collaborators: Collaborator[];
   initialData?: Employee | null;
   slotInfo?: { sector: string; machine: string; shift: string; role: string }; // role is now string
 }
 
 type ModalAction = 'update' | 'vacation' | 'medical' | 'terminate' | 'transfer' | 'create' | 'delete';
 
-const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, availableShifts, availableMachines, availableRoles, initialData, slotInfo }) => {
+const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, availableShifts, availableMachines, availableRoles, collaborators, initialData, slotInfo }) => {
   const [actionType, setActionType] = useState<ModalAction>('update');
   const [formData, setFormData] = useState<Partial<Employee>>({
     name: '',
@@ -24,7 +25,18 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
     machine: '',
     shift: '',
     status: 'Ativo',
+    collaboratorId: ''
   });
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const filteredCollaborators = useMemo(() => {
+    if (!searchTerm) return collaborators;
+    return collaborators.filter(c => 
+      c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [collaborators, searchTerm]);
   
   const [extraData, setExtraData] = useState({
     reason: '',
@@ -36,7 +48,16 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        setFormData({ ...initialData });
+        setFormData({ 
+          ...initialData,
+          name: initialData.name || '',
+          role: initialData.role || '',
+          sector: initialData.sector || '',
+          machine: initialData.machine || '',
+          shift: initialData.shift || '',
+          status: initialData.status || 'Ativo',
+          collaboratorId: initialData.collaboratorId || ''
+        });
         setActionType('update');
       } else if (slotInfo) {
         setFormData({
@@ -169,9 +190,59 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
           {/* Dados Básicos (Update / Create / Transfer) */}
           {(actionType === 'update' || actionType === 'create' || actionType === 'transfer') && (
             <div className="space-y-4 animate-in fade-in slide-in-from-left-4">
-                <div>
+                <div className="relative">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1.5 flex items-center gap-2">Nome Completo</label>
-                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} disabled={actionType === 'transfer'} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="Nome..." />
+                  
+                  {actionType === 'create' ? (
+                    <div className="relative">
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={searchTerm} 
+                          onChange={e => {
+                            setSearchTerm(e.target.value);
+                            setIsDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsDropdownOpen(true)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 pr-12 text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 shadow-inner" 
+                          placeholder="Pesquisar colaborador..." 
+                        />
+                        <Search className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                      </div>
+
+                      {isDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)}></div>
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-20 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-60 overflow-y-auto custom-scrollbar">
+                            {filteredCollaborators.length > 0 ? (
+                              filteredCollaborators.map(c => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData({...formData, name: c.name, collaboratorId: c.id, role: c.role || formData.role});
+                                    setSearchTerm(c.name);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className="w-full text-left px-5 py-3.5 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                                >
+                                  <p className="text-sm font-black text-slate-700">{c.name}</p>
+                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{c.role}</p>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-5 py-8 text-center bg-slate-50/50">
+                                <p className="text-xs font-bold text-slate-400 italic">Nenhum colaborador encontrado.</p>
+                                <p className="text-[10px] font-black text-blue-500 uppercase mt-2">Cadastre no Menu Extra primeiro.</p>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <input type="text" value={formData.name} disabled className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-black text-slate-500 outline-none" />
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
