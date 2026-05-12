@@ -1205,7 +1205,7 @@ export const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 bg-[url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80')] bg-cover bg-center">
         <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"></div>
-        <div className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl relative animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-full max-w-md bg-white rounded-[3rem] px-10 pt-10 pb-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-500">
            <div className="flex flex-col items-center mb-10">
               <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mb-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-blue-400 rounded-[2.5rem] animate-pulse blur-xl opacity-30"></div>
@@ -1287,7 +1287,7 @@ export const App: React.FC = () => {
                 </div>
 
                 {!discoveredUser?.isFirstAccess ? (
-                  <div className={`space-y-6 transition-all duration-500 ${discoveredUser ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                  <div className={`space-y-6 transition-all duration-500 ${discoveredUser ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none hidden'}`}>
                     <div>
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Senha de Acesso</label>
                       <input 
@@ -1353,7 +1353,7 @@ export const App: React.FC = () => {
                 )}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-3 items-center">
+            <div className={`mt-2 pt-4 border-t border-slate-100 flex flex-col gap-2 items-center ${!discoveredUser && loginMatricula.length < 3 ? 'mt-1' : ''}`}>
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">© 2026 {loginSystemName} • Produção</p>
            </div>
         </div>
