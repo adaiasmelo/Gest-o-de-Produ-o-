@@ -97,10 +97,8 @@ export const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loginMatricula, setLoginMatricula] = useState('');
   const [loginPass, setLoginPass] = useState('');
-  const [isFirstAccessStep, setIsFirstAccessStep] = useState(false);
-  const [tempUser, setTempUser] = useState<SystemUser | null>(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmLoginPass, setConfirmLoginPass] = useState('');
+  const [discoveredUser, setDiscoveredUser] = useState<SystemUser | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExtraMenuOpen, setIsExtraMenuOpen] = useState(false);
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
@@ -293,8 +291,25 @@ export const App: React.FC = () => {
     localStorage.removeItem('manupackaging_user');
   };
 
-  const handleLogin = (matricula: string, pass: string) => {
-    // Permite login do administrador padrão mesmo que o banco esteja vazio ou em carregamento
+  useEffect(() => {
+    if (loginMatricula && loginMatricula.length >= 3) {
+      const user = systemUsers.find(u => u.registration === loginMatricula);
+      if (user) {
+        setDiscoveredUser(user);
+        // Automatically trigger biometrics if user has ID and login isn't complete
+        if (user.biometricId && biometricSupported && !loggedUser) {
+          handleBiometricLogin(user);
+        }
+      } else {
+        setDiscoveredUser(null);
+      }
+    } else {
+      setDiscoveredUser(null);
+    }
+  }, [loginMatricula, systemUsers, biometricSupported, !!loggedUser]);
+
+  const handleLogin = async (matricula: string, pass: string, confirmPas?: string) => {
+    // Default Admin Check
     if (matricula === '1010' && pass === '1010') {
       const defaultAdmin: SystemUser = {
         id: 'admin_1010',
@@ -318,15 +333,36 @@ export const App: React.FC = () => {
       return;
     }
 
-    const user = systemUsers.find(u => u.registration === matricula);
+    const user = discoveredUser || systemUsers.find(u => u.registration === matricula);
     if (!user) {
       alert('Matrícula não encontrada.');
       return;
     }
 
     if (user.isFirstAccess) {
-      setTempUser(user);
-      setIsFirstAccessStep(true);
+      if (!pass || pass.length < 4) {
+        alert('A senha deve ter pelo menos 4 caracteres.');
+        return;
+      }
+      if (pass !== confirmPas) {
+        alert('As senhas não coincidem.');
+        return;
+      }
+
+      try {
+        const updated = { ...user, password: pass, isFirstAccess: false };
+        await setDoc(doc(db, 'system_users', user.id), updated);
+        setLoggedUser(updated);
+        localStorage.setItem('manupackaging_user', JSON.stringify(updated));
+
+        // Prompt for biometrics immediately after first access
+        if (biometricSupported) {
+          setBiometricUser(updated);
+          setShowBiometricPrompt(true);
+        }
+      } catch (err) {
+        alert('Erro ao salvar senha.');
+      }
       return;
     }
 
@@ -344,23 +380,14 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleBiometricLogin = async () => {
-    if (!loginMatricula) {
-      alert('Por favor, informe sua matrícula primeiro.');
-      return;
-    }
-    const user = systemUsers.find(u => u.registration === loginMatricula);
-    if (!user || !user.biometricId) {
-      alert('Biometria não cadastrada para esta matrícula.');
-      return;
-    }
+  const handleBiometricLogin = async (userParam?: SystemUser) => {
+    const user = userParam || systemUsers.find(u => u.registration === loginMatricula);
+    if (!user || !user.biometricId) return;
 
     const success = await authenticateBiometrics(user.biometricId);
     if (success) {
       setLoggedUser(user);
       localStorage.setItem('manupackaging_user', JSON.stringify(user));
-    } else {
-      alert('Falha na autenticação biométrica.');
     }
   };
 
@@ -1201,118 +1228,98 @@ export const App: React.FC = () => {
               </p>
            </div>
 
-           {!isFirstAccessStep ? (
-             <div className="space-y-6">
-                <div>
+           <div className="space-y-6">
+                <div className="relative group">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Número de Matrícula</label>
-                  <input 
-                    type="text" 
-                    value={loginMatricula} 
-                    onChange={e => setLoginMatricula(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
-                    placeholder="Digite sua matrícula"
-                  />
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={loginMatricula} 
+                      onChange={e => setLoginMatricula(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all pr-12"
+                      placeholder="Sua matrícula"
+                    />
+                    {discoveredUser && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
+                  {discoveredUser && (
+                    <p className="mt-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1">
+                      <ShieldCheck size={12} /> {discoveredUser.name.split(' ')[0]} Identificado
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Senha de Acesso</label>
-                  <input 
-                    type="password" 
-                    value={loginPass} 
-                    onChange={e => setLoginPass(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
-                    placeholder="••••••••"
-                  />
-                </div>
-                <button 
-                  onClick={() => handleLogin(loginMatricula, loginPass)}
-                  className="w-full py-5 bg-blue-600 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
-                  disabled={isInitializing}
-                >
-                  {isInitializing ? 'Carregando...' : 'Entrar no Sistema'} <ChevronRight size={18} />
-                </button>
 
-                {biometricSupported && (
-                  <button 
-                    onClick={handleBiometricLogin}
-                    className="w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 border border-slate-200"
-                  >
-                    <Fingerprint size={18} className="text-blue-600" /> Acesso Biométrico / Digital
-                  </button>
-                )}
-             </div>
-           ) : (
-             <div className="space-y-6">
-                <div className="bg-amber-50 p-5 rounded-[1.5rem] border border-amber-100 mb-2">
-                  <p className="text-xs font-bold text-amber-700 text-center leading-relaxed">Olá, <span className="text-slate-900 font-black">{tempUser?.name}</span>!<br/>Este é o seu primeiro acesso. Por favor, crie uma senha de segurança.</p>
-                </div>
-                {biometricSupported && (
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 shrink-0">
-                      <Smartphone size={20} />
-                    </div>
+                {!discoveredUser?.isFirstAccess ? (
+                  <div className={`space-y-6 transition-all duration-500 ${discoveredUser ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
                     <div>
-                      <p className="text-[10px] font-black text-blue-800 uppercase leading-tight">Configurar Biometria</p>
-                      <p className="text-[9px] font-bold text-blue-600/70 uppercase tracking-tighter mt-0.5">Ative o acesso rápido por digital ou rosto</p>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Senha de Acesso</label>
+                      <input 
+                        type="password" 
+                        value={loginPass} 
+                        onChange={e => setLoginPass(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                        placeholder="••••••••"
+                      />
                     </div>
+                    <button 
+                      onClick={() => handleLogin(loginMatricula, loginPass)}
+                      className="w-full py-5 bg-blue-600 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50"
+                      disabled={isInitializing || !loginPass}
+                    >
+                      {isInitializing ? 'Carregando...' : 'Entrar no Sistema'} <ChevronRight size={18} />
+                    </button>
+                    {discoveredUser?.biometricId && biometricSupported && (
+                      <button 
+                        onClick={() => handleBiometricLogin(discoveredUser)}
+                        className="w-full py-4 text-[10px] font-black text-blue-500 uppercase tracking-widest hover:text-blue-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Fingerprint size={16} /> Usar Biometria Agora
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="bg-amber-50 p-5 rounded-[1.5rem] border border-amber-100 mb-2">
+                      <p className="text-xs font-bold text-amber-700 text-center leading-relaxed">Olá, <span className="text-slate-900 font-black">{discoveredUser.name.split(' ')[0]}</span>!<br/>Este é o seu primeiro acesso. Por favor, crie uma senha de segurança.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Nova Senha</label>
+                        <input 
+                          type="password" 
+                          value={loginPass} 
+                          onChange={e => setLoginPass(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
+                          placeholder="Senha"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Confirmar</label>
+                        <input 
+                          type="password" 
+                          value={confirmLoginPass} 
+                          onChange={e => setConfirmLoginPass(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
+                          placeholder="Confirmar"
+                        />
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => handleLogin(loginMatricula, loginPass, confirmLoginPass)}
+                      className="w-full py-5 bg-emerald-600 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-200 hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
+                    >
+                      Ativar Conta e Biometria <Target size={18} />
+                    </button>
                   </div>
                 )}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Crie sua Senha</label>
-                    <input 
-                      type="password" 
-                      value={newPassword} 
-                      onChange={e => setNewPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
-                      placeholder="Nova senha"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Confirme a Senha</label>
-                    <input 
-                      type="password" 
-                      value={confirmPassword} 
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500"
-                      placeholder="Confirme a senha"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setIsFirstAccessStep(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
-                  <button 
-                    onClick={async () => {
-                      if (!newPassword || newPassword !== confirmPassword) {
-                        alert('As senhas não coincidem ou estão vazias.');
-                        return;
-                      }
-                      if (tempUser) {
-                        try {
-                          const updated = { ...tempUser, password: newPassword, isFirstAccess: false };
-                          await setDoc(doc(db, 'system_users', tempUser.id), updated);
-                          
-                          setLoggedUser(updated);
-                          localStorage.setItem('manupackaging_user', JSON.stringify(updated));
+            </div>
 
-                          // Prompt for biometrics after first access
-                          if (biometricSupported) {
-                            setBiometricUser(updated);
-                            setShowBiometricPrompt(true);
-                          }
-                        } catch (err) {
-                          alert('Erro ao salvar senha.');
-                        }
-                      }
-                    }}
-                    className="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all"
-                  >
-                    Ativar Conta
-                  </button>
-                </div>
-             </div>
-           )}
-
-           <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col gap-4 items-center">
+            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col gap-4 items-center">
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">© 2026 {loginSystemName} • Produção</p>
            </div>
         </div>
