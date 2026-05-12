@@ -1250,6 +1250,40 @@ export const App: React.FC = () => {
                       <ShieldCheck size={12} /> {discoveredUser.name.split(' ')[0]} Identificado
                     </p>
                   )}
+                  
+                  {!discoveredUser && loginMatricula.length < 3 && (
+                    <div className="mt-6 space-y-4 animate-in fade-in duration-500">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                          <Info size={16} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-800 uppercase leading-none">Primeiro Acesso?</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Insira sua matrícula para cadastrar sua senha de 4 dígitos.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                          <Fingerprint size={16} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-800 uppercase leading-none">Acesso Rápido</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Após o primeiro login, você poderá usar sua digital ou rosto para entrar.</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+                          <Smartphone size={16} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-800 uppercase leading-none">Segurança</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Seus dados estão protegidos por criptografia de ponta a ponta.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {!discoveredUser?.isFirstAccess ? (
