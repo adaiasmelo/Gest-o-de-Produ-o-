@@ -297,15 +297,35 @@ export const App: React.FC = () => {
 
   const lastBiometricAttemptRef = useRef<string>('');
 
-  useEffect(() => {
-    if (loginMatricula && loginMatricula.length >= 3) {
-      const user = systemUsers.find(u => u.registration === loginMatricula);
+  const handleMatriculaChange = (val: string) => {
+    setLoginMatricula(val);
+    
+    if (val.length >= 3) {
+      let user = systemUsers.find(u => u.registration === val);
+      
+      // Fallback for admin 1010 if not in database yet
+      if (!user && val === '1010') {
+        user = {
+          id: 'admin_1010',
+          registration: '1010',
+          name: 'Administrador 1010',
+          role: 'Administrador',
+          isFirstAccess: false,
+          password: '1010',
+          permissions: {
+            canManagePersonnel: true,
+            canManageSettings: true,
+            canViewHistory: true,
+            canManageUsers: true
+          }
+        };
+      }
+
       if (user) {
         setDiscoveredUser(user);
-        // Automatically trigger biometrics if user has ID and login isn't complete
-        // Use a ref to avoid repeating the prompt while typing the same matricula
-        if (user.biometricId && biometricSupported && !loggedUser && lastBiometricAttemptRef.current !== loginMatricula) {
-          lastBiometricAttemptRef.current = loginMatricula;
+        // Direct call within the event loop to satisfy user gesture requirement
+        if (user.biometricId && biometricSupported && !loggedUser && lastBiometricAttemptRef.current !== val) {
+          lastBiometricAttemptRef.current = val;
           handleBiometricLogin(user);
         }
       } else {
@@ -316,7 +336,7 @@ export const App: React.FC = () => {
       setDiscoveredUser(null);
       lastBiometricAttemptRef.current = '';
     }
-  }, [loginMatricula, systemUsers, biometricSupported, !!loggedUser]);
+  };
 
   const handleLogin = async (matricula: string, pass: string, confirmPas?: string) => {
     // Default Admin Check
@@ -1245,7 +1265,7 @@ export const App: React.FC = () => {
                     <input 
                       type="text" 
                       value={loginMatricula} 
-                      onChange={e => setLoginMatricula(e.target.value)}
+                      onChange={e => handleMatriculaChange(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 font-bold text-sm outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all pr-12"
                       placeholder="Sua matrícula"
                     />
