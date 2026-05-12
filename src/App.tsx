@@ -5,7 +5,7 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu
 } from 'lucide-react';
 import { 
   Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -99,6 +99,7 @@ export const App: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isExtraMenuOpen, setIsExtraMenuOpen] = useState(false);
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -706,13 +707,13 @@ export const App: React.FC = () => {
             headStyles: { 
                 fillColor: [30, 41, 59], 
                 textColor: [255, 255, 255],
-                fontSize: 9,
+                fontSize: 10,
                 fontStyle: 'bold',
                 halign: 'center'
             },
             styles: { 
-                fontSize: 9, 
-                cellPadding: 3,
+                fontSize: 11, 
+                cellPadding: 4,
                 valign: 'middle'
             },
             columnStyles: {
@@ -795,10 +796,10 @@ export const App: React.FC = () => {
                     head: [['NOME', 'FUNÇÃO', 'STATUS']],
                     body: tableData,
                     theme: 'grid',
-                    headStyles: { fillColor: [71, 85, 105], fontSize: 8, halign: 'center' },
-                    styles: { fontSize: 8, cellPadding: 2 },
+                    headStyles: { fillColor: [71, 85, 105], fontSize: 10, halign: 'center' },
+                    styles: { fontSize: 11, cellPadding: 3.5 },
                     columnStyles: {
-                        0: { cellWidth: 100 },
+                        0: { cellWidth: 100, fontStyle: 'bold' },
                         1: { cellWidth: 52 },
                         2: { cellWidth: 30, halign: 'center' }
                     },
@@ -909,13 +910,13 @@ export const App: React.FC = () => {
           }
       }} className={`flex items-center justify-between p-2.5 rounded-xl transition-all border cursor-pointer ${isVacant ? (isHiring ? 'bg-orange-50/40 border-orange-200' : 'bg-red-50/10 border-dashed border-red-100') : 'bg-white border-slate-100 hover:border-blue-400 shadow-sm'}`}>
         <div className="flex flex-col gap-0">
-          <span className={`text-[10px] font-bold truncate max-w-[120px] slot-name ${isVacant ? (isHiring ? 'text-orange-600' : 'text-slate-400 italic') : 'text-slate-800'}`}>
+          <span className={`text-[13px] font-bold truncate max-w-[150px] slot-name ${isVacant ? (isHiring ? 'text-orange-600' : 'text-slate-400 italic') : 'text-slate-800'}`}>
             {isHiring ? `Em Contratação` : !emp ? `(Vaga)` : emp.name}
           </span>
-          {isVacant && <span className="text-[8px] font-black text-slate-400/50 uppercase tracking-tighter slot-role">{label || role}</span>}
+          {isVacant && <span className="text-[9px] font-black text-slate-400/50 uppercase tracking-tighter slot-role">{label || role}</span>}
         </div>
         {!isVacant ? (
-          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter shrink-0 slot-tag ${emp.role.toLowerCase().includes('operador') ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-tighter shrink-0 slot-tag ${emp.role.toLowerCase().includes('operador') ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
             {emp.role.includes('Operador') ? 'OPE' : emp.role.includes('Auxiliar') ? 'AUX' : emp.role.substring(0,3).toUpperCase()}
           </span>
         ) : (
@@ -959,13 +960,13 @@ export const App: React.FC = () => {
   };
 
   const renderPersonnelStat = (label: string, value: number, sub: string, icon: React.ReactNode, color: string) => (
-    <div className="bg-white p-5 rounded-[1.8rem] border border-slate-100 shadow-sm flex items-center justify-between group">
+    <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl md:rounded-[1.8rem] border border-slate-100 shadow-sm flex items-center justify-between group transition-all hover:shadow-md">
       <div>
-        <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${color}`}>{label}</p>
-        <p className="text-3xl font-black text-slate-800">{value}</p>
-        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{sub}</p>
+        <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-0.5 sm:mb-1 ${color}`}>{label}</p>
+        <p className="text-2xl sm:text-3xl font-black text-slate-800">{value}</p>
+        <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase mt-0.5 sm:mt-1">{sub}</p>
       </div>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${color.replace('text', 'bg').replace('-400', '-50')}`}>
+      <div className={`w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-lg sm:rounded-2xl flex items-center justify-center transition-transform group-hover:rotate-12 ${color.replace('text', 'bg').replace('-400', '-50')}`}>
         {icon}
       </div>
     </div>
@@ -1179,8 +1180,8 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-8 no-print">
-        <div className="flex p-1 md:p-1.5 bg-slate-200/50 rounded-2xl md:rounded-[1.8rem] w-full max-w-2xl mx-auto shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-8 no-print flex flex-col md:flex-row items-center justify-center gap-4">
+        <div className="flex p-1 md:p-1.5 bg-slate-200/50 rounded-2xl md:rounded-[1.8rem] w-full max-w-2xl shadow-sm mx-auto">
           {canViewDashboard && (
             <button onClick={() => setActiveTab('dashboard')} className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2.5 md:px-6 md:py-3.5 rounded-xl md:rounded-[1.4rem] text-[9px] md:text-[11px] font-black uppercase transition-all ${activeTab === 'dashboard' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}><Activity className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]"/> <span className="truncate">Indicadores</span></button>
           )}
@@ -1245,59 +1246,59 @@ export const App: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex justify-between items-center group transition-all hover:shadow-md">
+                <div className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm flex justify-between items-center group transition-all hover:shadow-md">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DIÁRIO</p>
-                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">PRODUÇÃO ONTEM</h3>
-                    <p className="text-5xl font-black text-slate-800 mt-3">{formatWeight(dashboardStats.yesterday)}</p>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-800 uppercase tracking-tight">PRODUÇÃO ONTEM</h3>
+                    <p className="text-3xl sm:text-5xl font-black text-slate-800 mt-3">{formatWeight(dashboardStats.yesterday)}</p>
                   </div>
-                  <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-[1.8rem] flex items-center justify-center border border-slate-100"><TrendingUp size={32}/></div>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 text-slate-300 rounded-2xl sm:rounded-[1.8rem] flex items-center justify-center border border-slate-100"><TrendingUp size={24} className="sm:w-8 sm:h-8"/></div>
                 </div>
 
                 <div 
                   onClick={() => setShowEremaChart(true)} 
-                  className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex justify-between items-center group transition-all hover:shadow-md cursor-pointer active:scale-[0.98]"
+                  className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm flex justify-between items-center group transition-all hover:shadow-md cursor-pointer active:scale-[0.98]"
                 >
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1">RECICLAGEM <Info size={10} /></p>
-                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">PRODUÇÃO EREMA ({filterDay ? 'DIA' : 'MÊS'})</h3>
-                    <p className="text-5xl font-black text-slate-800 mt-3">{formatWeight(dashboardStats.eremaMonth)}</p>
+                    <h3 className="text-lg sm:text-xl font-black text-slate-800 uppercase tracking-tight">PRODUÇÃO EREMA ({filterDay ? 'DIA' : 'MÊS'})</h3>
+                    <p className="text-3xl sm:text-5xl font-black text-slate-800 mt-3">{formatWeight(dashboardStats.eremaMonth)}</p>
                   </div>
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-300 rounded-[1.8rem] flex items-center justify-center border border-emerald-100"><RotateCcw size={32}/></div>
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-50 text-emerald-300 rounded-2xl sm:rounded-[1.8rem] flex items-center justify-center border border-emerald-100"><RotateCcw size={24} className="sm:w-8 sm:h-8"/></div>
                 </div>
             </div>
 
             {!filterDay && ecoBalance[dashboardMonth] && (
-              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-6">
-                <div className="flex items-center gap-4 text-slate-800">
-                  <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-[1.2rem] flex items-center justify-center border border-orange-100"><Scale size={24} /></div>
+              <div className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-4 sm:gap-6">
+                <div className="flex items-center gap-3 sm:gap-4 text-slate-800">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-50 text-orange-500 rounded-xl sm:rounded-[1.2rem] flex items-center justify-center border border-orange-100"><Scale size={20} className="sm:w-6 sm:h-6" /></div>
                   <div>
-                    <h3 className="text-xl font-black uppercase tracking-tight">Balanço Acumulado de Eco B vs Reciclagem</h3>
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">MÊS DE REFERÊNCIA: {dashboardMonth}</p>
+                    <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight leading-tight">Eco B vs Reciclagem</h3>
+                    <p className="text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-widest">MÊS DE REFERÊNCIA: {dashboardMonth}</p>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Sobra Mês Anterior</p>
-                    <p className="text-2xl font-black text-slate-500">{formatWeight(ecoBalance[dashboardMonth].startingSurplus)}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                  <div className="bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100 flex items-center justify-between gap-2">
+                    <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Sobra Anterior</p>
+                    <p className="text-lg sm:text-xl font-black text-slate-500">{formatWeight(ecoBalance[dashboardMonth].startingSurplus)}</p>
                   </div>
-                  <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
-                    <p className="text-[10px] font-black text-orange-500 uppercase mb-1 tracking-widest flex items-center gap-1"><TrendingUp size={12}/> Gerado (Eco B)</p>
-                    <p className="text-2xl font-black text-orange-500">+{formatWeight(ecoBalance[dashboardMonth].monthEcoB)}</p>
+                  <div className="bg-orange-50/50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-orange-100/50 flex items-center justify-between gap-2">
+                    <p className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-1"><TrendingUp size={10} className="sm:w-3 sm:h-3"/> Gerado</p>
+                    <p className="text-lg sm:text-xl font-black text-orange-500">+{formatWeight(ecoBalance[dashboardMonth].monthEcoB)}</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <p className="text-[10px] font-black text-slate-600 uppercase mb-1 tracking-widest">Total Disponível</p>
-                    <p className="text-2xl font-black text-slate-800">{formatWeight(ecoBalance[dashboardMonth].totalAvailable)}</p>
+                  <div className="bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 flex items-center justify-between gap-2">
+                    <p className="text-[9px] sm:text-[10px] font-black text-slate-600 uppercase tracking-widest text-nowrap">Total Disponível</p>
+                    <p className="text-lg sm:text-xl font-black text-slate-800">{formatWeight(ecoBalance[dashboardMonth].totalAvailable)}</p>
                   </div>
-                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
-                    <p className="text-[10px] font-black text-emerald-600 uppercase mb-1 tracking-widest flex items-center gap-1"><TrendingDown size={12}/> Reciclado (Erema)</p>
-                    <p className="text-2xl font-black text-emerald-600">-{formatWeight(ecoBalance[dashboardMonth].monthRecycled)}</p>
+                  <div className="bg-emerald-50/50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-emerald-100/50 flex items-center justify-between gap-2">
+                    <p className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1"><TrendingDown size={10} className="sm:w-3 sm:h-3"/> Reciclado</p>
+                    <p className="text-lg sm:text-xl font-black text-emerald-600">-{formatWeight(ecoBalance[dashboardMonth].monthRecycled)}</p>
                   </div>
-                  <div className="bg-slate-800 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+                  <div className="bg-slate-800 p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg relative overflow-hidden flex items-center justify-between gap-2">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest relative z-10">Sobra para Mês Seguinte</p>
-                    <p className="text-2xl font-black text-white relative z-10">{formatWeight(ecoBalance[dashboardMonth].endingSurplus)}</p>
+                    <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest relative z-10">Sobra Seg.</p>
+                    <p className="text-lg sm:text-xl font-black text-white relative z-10">{formatWeight(ecoBalance[dashboardMonth].endingSurplus)}</p>
                   </div>
                 </div>
               </div>
@@ -1325,7 +1326,7 @@ export const App: React.FC = () => {
                 if (data.length === 0) return null;
                 
                 return (
-                  <div key={i} id={`chart-card-${i}`} className="bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[550px] flex flex-col relative group">
+                  <div key={i} id={`chart-card-${i}`} className="bg-white p-5 sm:p-7 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm min-h-[500px] sm:min-h-[550px] flex flex-col relative group">
                     <div className="flex items-center justify-between mb-8">
                       <div className="w-8"></div>
                       <h3 className="text-[10px] font-black text-center uppercase text-slate-800 tracking-widest flex-1">{conf.title}</h3>
@@ -1369,7 +1370,7 @@ export const App: React.FC = () => {
             </div>
 
             {/* Card: Relação de Paradas e Motivos */}
-            <div id="stops-motifs-card" className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative group animate-in slide-in-from-bottom-4 duration-500">
+            <div id="stops-motifs-card" className="bg-white p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm relative group animate-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-2xl flex items-center justify-center border border-orange-100">
@@ -1533,28 +1534,54 @@ export const App: React.FC = () => {
 
         {activeTab === 'personnel' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex justify-end gap-3 no-print">
-              <button 
-                onClick={exportPersonnelToPDF} 
-                className="bg-emerald-600 text-white px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase flex items-center gap-3 shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
-              >
-                <FileText size={18} /> Baixar PDF Pessoal
-              </button>
-              <button onClick={() => setIsHistoryModalOpen(true)} className="bg-white border border-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase flex items-center gap-3 shadow-sm hover:bg-slate-50 transition-all active:scale-95">
-                <History size={18} className="text-blue-500"/> Histórico
-              </button>
-              <button onClick={() => setIsDatabaseModalOpen(true)} className="bg-white border border-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase flex items-center gap-3 shadow-sm hover:bg-slate-50 transition-all active:scale-95">
-                <Database size={18} className="text-emerald-500"/> Banco de Dados
-              </button>
+            <div className="flex justify-center no-print">
+              <div className="relative">
+                <button 
+                  onClick={() => setIsExtraMenuOpen(!isExtraMenuOpen)}
+                  className="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all text-slate-600 flex items-center gap-2"
+                >
+                  <Menu size={22} />
+                  <span className="text-[10px] font-black uppercase tracking-widest px-1">Menu Extra</span>
+                </button>
+                
+                {isExtraMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsExtraMenuOpen(false)}></div>
+                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top">
+                      <button 
+                        onClick={() => { setIsExtraMenuOpen(false); exportPersonnelToPDF(); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors"
+                      >
+                        <FileText size={18} className="text-emerald-500" />
+                        Baixar PDF Pessoal
+                      </button>
+                      <button 
+                        onClick={() => { setIsExtraMenuOpen(false); setIsHistoryModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors"
+                      >
+                        <History size={18} className="text-blue-500" />
+                        Histórico de Pessoal
+                      </button>
+                      <button 
+                        onClick={() => { setIsExtraMenuOpen(false); setIsDatabaseModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors"
+                      >
+                        <Database size={18} className="text-emerald-500" />
+                        Banco de Dados
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <div ref={personnelRef} data-ref-personnel-root className="space-y-8 p-1">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {renderPersonnelStat('Colaboradores', totalAtivos, 'Ativos', <Users size={24}/>, 'text-blue-400')}
-              {renderPersonnelStat('Operadores', totalOperadoresAtivos, 'Ativos', <HardHat size={24}/>, 'text-emerald-400')}
-              {renderPersonnelStat('Auxiliares', totalAuxiliaresAtivos, 'Ativos', <Briefcase size={24}/>, 'text-orange-400')}
-              {renderPersonnelStat('Vagas', totalVacancies, 'Aberto', <UserPlus size={24}/>, 'text-red-400')}
-            </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {renderPersonnelStat('Colaboradores', totalAtivos, 'Ativos', <Users size={20} className="sm:w-6 sm:h-6"/>, 'text-blue-400')}
+                {renderPersonnelStat('Operadores', totalOperadoresAtivos, 'Ativos', <HardHat size={20} className="sm:w-6 sm:h-6"/>, 'text-emerald-400')}
+                {renderPersonnelStat('Auxiliares', totalAuxiliaresAtivos, 'Ativos', <Briefcase size={20} className="sm:w-6 sm:h-6"/>, 'text-orange-400')}
+                {renderPersonnelStat('Vagas', totalVacancies, 'Aberto', <UserPlus size={20} className="sm:w-6 sm:h-6"/>, 'text-red-400')}
+              </div>
 
             <div className="bg-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-700">
                 <div className="px-8 py-6 flex items-center justify-between bg-slate-900/80">
