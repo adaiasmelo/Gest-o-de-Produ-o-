@@ -1252,7 +1252,7 @@ export const App: React.FC = () => {
                   )}
                   
                   {!discoveredUser && loginMatricula.length < 3 && (
-                    <div className="mt-6 space-y-4 animate-in fade-in duration-500">
+                    <div className="mt-4 space-y-3 animate-in fade-in duration-500">
                       <div className="flex gap-3">
                         <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                           <Info size={16} />
@@ -1353,7 +1353,7 @@ export const App: React.FC = () => {
                 )}
             </div>
 
-            <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col gap-4 items-center">
+            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-3 items-center">
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">© 2026 {loginSystemName} • Produção</p>
            </div>
         </div>
