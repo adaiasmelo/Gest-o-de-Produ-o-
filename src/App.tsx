@@ -1384,7 +1384,7 @@ export const App: React.FC = () => {
             </div>
 
             <div className={`mt-2 pt-4 border-t border-slate-100 flex flex-col gap-2 items-center ${!discoveredUser && loginMatricula.length < 3 ? 'mt-1' : ''}`}>
-              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">© 2026 {loginSystemName} • Produção</p>
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">Criado por Adaias Melo</p>
            </div>
         </div>
 
