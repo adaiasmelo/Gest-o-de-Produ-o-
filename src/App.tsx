@@ -195,6 +195,47 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!settingsLoaded) return;
+
+    // Update Favicon
+    const favicon = document.getElementById('favicon-link') as HTMLLinkElement;
+    if (favicon) {
+      favicon.href = systemLogo || "https://cdn-icons-png.flaticon.com/512/2618/2618488.png";
+    }
+
+    // Update PWA Manifest dynamically
+    const manifest = {
+      "name": systemName || "Gestão e Controle de Produção",
+      "short_name": systemName?.substring(0, 15) || "Manupackaging",
+      "description": "Sistema de Gestão Industrial e Controle de Produção",
+      "start_url": "/",
+      "display": "standalone",
+      "background_color": "#ffffff",
+      "theme_color": "#3b82f6",
+      "icons": [
+        {
+          "src": systemLogo || "https://cdn-icons-png.flaticon.com/512/2618/2618488.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
+        }
+      ]
+    };
+    
+    const stringManifest = JSON.stringify(manifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    const manifestLink = document.getElementById('manifest-link') as HTMLLinkElement;
+    if (manifestLink) {
+      manifestLink.href = manifestURL;
+    }
+
+    return () => {
+      URL.revokeObjectURL(manifestURL);
+    };
+  }, [systemLogo, systemName, settingsLoaded]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     const audioRef = { current: new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3') };
@@ -3253,8 +3294,17 @@ const SettingsModal: React.FC<{
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Personalização Visual</p>
-                    <div className="flex gap-2">
-                       <button onClick={() => setSystemLogo(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover</button>
+                    <div className="space-y-3">
+                      <input 
+                        type="url" 
+                        value={systemLogo?.startsWith('data:') ? '' : (systemLogo || '')} 
+                        onChange={e => setSystemLogo(e.target.value)}
+                        placeholder="Link da imagem (URL)..."
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[11px] font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                      />
+                      <div className="flex gap-2">
+                         <button onClick={() => setSystemLogo(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover</button>
+                      </div>
                     </div>
                   </div>
                 </div>
