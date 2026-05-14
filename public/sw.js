@@ -1,12 +1,13 @@
-const CACHE_NAME = 'manupackaging-v2';
+const CACHE_NAME = 'manupackaging-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json',
+  '/manifest.json?v=3',
   'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png'
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('[SW] Instalando v3...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
