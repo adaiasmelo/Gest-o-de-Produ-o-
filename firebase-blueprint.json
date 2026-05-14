@@ -31,6 +31,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "registration": { "type": "string" },
         "name": { "type": "string" },
         "role": { "type": "string" },
         "shift": { "type": "string" },
@@ -74,6 +75,7 @@
       "description": "Configuration for the system.",
       "type": "object",
       "properties": {
+      "properties": {
         "operators": { "type": "array" },
         "availableRoles": { "type": "array" },
         "goals": { "type": "object" },
@@ -81,6 +83,35 @@
         "loginSystemName": { "type": "string" },
         "loginSystemSubtitle": { "type": "string" },
         "systemLogo": { "type": "string" }
+      }
+    },
+    "Collaborator": {
+      "title": "Collaborator",
+      "description": "Represents a collaborator in the central database.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "registration": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "birthDate": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "TrainingRecord": {
+      "title": "Training Record",
+      "description": "Represents a completed training form.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "training": { "type": "string" },
+        "date": { "type": "string" },
+        "duration": { "type": "string" },
+        "location": { "type": "string" },
+        "instructor": { "type": "string" },
+        "content": { "type": "string" },
+        "participants": { "type": "array" },
+        "createdAt": { "type": "string" }
       }
     }
   },
@@ -90,6 +121,9 @@
     "personnelLogs": { "schema": "PersonnelLog", "description": "Personnel change logs" },
     "system_users": { "schema": "SystemUser", "description": "System access users" },
     "settings": { "schema": "Settings", "description": "Global settings" },
-    "shifts": { "schema": "object", "description": "Available shifts" }
+    "shifts": { "schema": "object", "description": "Available shifts" },
+    "collaborators": { "schema": "Collaborator", "description": "Central database of collaborators" },
+    "training_records": { "schema": "TrainingRecord", "description": "Saved training forms" },
+    "training_template": { "schema": "TrainingTemplate", "description": "Layout configuration for training PDF" }
   }
 }

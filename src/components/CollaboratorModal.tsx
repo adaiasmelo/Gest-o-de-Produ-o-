@@ -12,6 +12,7 @@ interface CollaboratorModalProps {
 
 const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ isOpen, onClose, onSave, initialData, availableRoles }) => {
   const [formData, setFormData] = useState<Partial<Collaborator>>({
+    registration: '',
     name: '',
     role: '',
     birthDate: '',
@@ -24,6 +25,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ isOpen, onClose, 
       if (initialData) {
         setFormData({
           ...initialData,
+          registration: initialData.registration || '',
           name: initialData.name || '',
           role: initialData.role || '',
           birthDate: initialData.birthDate || '',
@@ -32,6 +34,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ isOpen, onClose, 
         });
       } else {
         setFormData({
+          registration: '',
           name: '',
           role: availableRoles[0] || '',
           birthDate: '',
@@ -78,11 +81,24 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({ isOpen, onClose, 
         <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
           
           <div className="space-y-5">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 flex items-center gap-2">
-                Nome Completo <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 flex items-center gap-2">
+                  Matrícula <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={formData.registration} 
+                  onChange={e => setFormData({...formData, registration: e.target.value})} 
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-mono" 
+                  placeholder="Ex: 0001" 
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 flex items-center gap-2">
+                  Nome Completo <span className="text-red-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   value={formData.name} 

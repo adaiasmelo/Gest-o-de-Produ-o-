@@ -220,14 +220,25 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
                                   key={c.id}
                                   type="button"
                                   onClick={() => {
-                                    setFormData({...formData, name: c.name, collaboratorId: c.id, role: c.role || formData.role});
+                                    setFormData({
+                                      ...formData, 
+                                      name: c.name, 
+                                      collaboratorId: c.id, 
+                                      registration: c.registration,
+                                      role: c.role || formData.role
+                                    });
                                     setSearchTerm(c.name);
                                     setIsDropdownOpen(false);
                                   }}
                                   className="w-full text-left px-5 py-3.5 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
                                 >
-                                  <p className="text-sm font-black text-slate-700">{c.name}</p>
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{c.role}</p>
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <p className="text-sm font-black text-slate-700">{c.name}</p>
+                                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{c.role}</p>
+                                    </div>
+                                    <span className="text-[10px] font-black text-blue-500 font-mono">#{c.registration}</span>
+                                  </div>
                                 </button>
                               ))
                             ) : (

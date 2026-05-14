@@ -46,6 +46,7 @@ export interface Shift {
 
 export interface Collaborator {
   id: string;
+  registration: string; // Matricula
   name: string;
   role: string;
   birthDate?: string;
@@ -58,6 +59,7 @@ export type EmployeeStatus = 'Ativo' | 'Férias' | 'Atestado' | 'Desligado' | 'E
 
 export interface Employee {
   id: string;
+  registration: string; // Matricula
   collaboratorId?: string; // Link to the central database
   name: string;
   role: string; // Changed from strict union to string to allow dynamic roles
@@ -112,6 +114,34 @@ export interface PersonnelStructure {
   extrusao: SectorStructureExtrusao[];
   erema: SectorStructureStandard[];
   fitaAdesiva: SectorStructureStandard[];
+}
+
+export interface TrainingRecord {
+  id: string;
+  training: string;
+  date: string;
+  duration: string;
+  location: string;
+  instructor: string;
+  content: string;
+  participants: {
+    registration: string;
+    name: string;
+  }[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TrainingTemplate {
+  id: string;
+  companyName: string;
+  subCompanyName: string;
+  subtitle: string;
+  formCode: string;
+  baseFontSize: number;
+  titleFontSize: number;
+  footerText: string;
+  logoBase64?: string;
 }
 
 export interface UserPermissions {

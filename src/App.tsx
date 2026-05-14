@@ -15,7 +15,7 @@ import html2canvas from 'html2canvas';
 import { db, auth, OperationType, handleFirestoreError, seedInitialData } from './lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
-import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions } from './types';
+import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions, TrainingRecord, TrainingTemplate } from './types';
 import { INITIAL_DATA, GOAL_VALUE, DEFAULT_OPERATORS, INITIAL_EMPLOYEES, INITIAL_LOGS } from './constants';
 import { isBiometricAvailable, registerBiometrics, authenticateBiometrics } from './services/biometricService';
 import LaunchModal from './components/LaunchModal';
@@ -24,6 +24,8 @@ import CollaboratorModal from './components/CollaboratorModal';
 import HistoryModal from './components/HistoryModal';
 import ShiftModal from './components/ShiftModal';
 import DatabaseModal from './components/DatabaseModal';
+import TrainingModal from './components/TrainingModal';
+import TrainingTemplateModal from './components/TrainingTemplateModal';
 import { Database } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#64748b', '#1e293b', '#64748b', '#475569', '#94a3b8'];
@@ -90,6 +92,19 @@ export const App: React.FC = () => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
+  const [isTrainingModalOpen, setIsTrainingModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [trainingTemplate, setTrainingTemplate] = useState<TrainingTemplate>({
+    id: 'main',
+    companyName: 'MANU',
+    subCompanyName: 'PACKAGING',
+    subtitle: 'FITASA & AMAZÔNIA',
+    formCode: 'FMRH 010',
+    baseFontSize: 11,
+    titleFontSize: 14,
+    footerText: 'Revisão: 004 Data emissão: 08/01/2016 Data revisão: 22/01/2024 Elaboração: Leila Silva Aprovação: Lara Andrade',
+  });
+  const [trainingRecords, setTrainingRecords] = useState<TrainingRecord[]>([]);
   const [showEremaChart, setShowEremaChart] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ProductionEntry | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -145,6 +160,25 @@ export const App: React.FC = () => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Collaborator));
       setCollaborators(data);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'collaborators'));
+
+    const unsubTraining = onSnapshot(collection(db, 'training_records'), (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TrainingRecord));
+      setTrainingRecords(data.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'training_records'));
+
+    const unsubTemplate = onSnapshot(doc(db, 'settings', 'training_template'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as TrainingTemplate;
+        // Migration: If footer is still the old one, update it automatically
+        if (data.footerText && data.footerText.includes('Gestão Industrial') && data.footerText.includes('13/05/2026')) {
+          const newFooter = 'Revisão: 004 Data emissão: 08/01/2016 Data revisão: 22/01/2024 Elaboração: Leila Silva Aprovação: Lara Andrade';
+          setDoc(doc(db, 'settings', 'training_template'), { ...data, footerText: newFooter }, { merge: true });
+          setTrainingTemplate({ ...data, footerText: newFooter });
+        } else {
+          setTrainingTemplate(data);
+        }
+      }
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/training_template'));
 
     const unsubLogs = onSnapshot(collection(db, 'personnelLogs'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as PersonnelLog));
@@ -222,32 +256,54 @@ export const App: React.FC = () => {
 
       // Track names being added to avoid duplicates within the same migration loop
       const namesAdded = new Set<string>(currentCollaborators.map(c => c.name));
+      let nextRegNumber = Math.max(0, ...currentCollaborators.map(c => parseInt(c.registration) || 0)) + 1;
 
       for (const emp of employees) {
         if (!emp.name || emp.name === 'VAGA DISPONÍVEL' || emp.name === 'Em Contratação') continue;
         
-        if (!namesAdded.has(emp.name)) {
+        let targetColId = emp.collaboratorId;
+        let existingCol = currentCollaborators.find(c => c.id === emp.collaboratorId || c.name === emp.name);
+
+        if (!existingCol && !namesAdded.has(emp.name)) {
           try {
             const colRef = doc(collection(db, 'collaborators'));
             const colId = colRef.id;
+            const registration = emp.registration || String(nextRegNumber++).padStart(4, '0');
+            
             await setDoc(colRef, {
               id: colId,
               name: emp.name,
+              registration: registration,
               role: emp.role || 'Colaborador',
               updatedAt: new Date().toISOString()
             });
             namesAdded.add(emp.name);
+            targetColId = colId;
             
             // Also link the employee to this new collaborator ID
-            await setDoc(doc(db, 'employees', emp.id), { collaboratorId: colId }, { merge: true });
+            await setDoc(doc(db, 'employees', emp.id), { 
+              collaboratorId: colId,
+              registration: registration 
+            }, { merge: true });
           } catch (err) {
             console.error('Migration error for', emp.name, err);
           }
-        } else if (!emp.collaboratorId) {
-          // Link existing collaborator to employee if ID is missing
-          const existingCol = currentCollaborators.find(c => c.name === emp.name);
-          if (existingCol) {
-            await setDoc(doc(db, 'employees', emp.id), { collaboratorId: existingCol.id }, { merge: true });
+        } else if (existingCol) {
+          // Ensure sync: employee should have the same registration as collaborator
+          const updates: any = {};
+          if (!emp.collaboratorId) updates.collaboratorId = existingCol.id;
+          if (emp.registration !== existingCol.registration && existingCol.registration) {
+            updates.registration = existingCol.registration;
+          }
+          
+          if (Object.keys(updates).length > 0) {
+            await setDoc(doc(db, 'employees', emp.id), updates, { merge: true });
+          }
+          
+          // Also check if the collaborator itself needs a registration
+          if (!existingCol.registration) {
+             const registration = emp.registration || String(nextRegNumber++).padStart(4, '0');
+             await setDoc(doc(db, 'collaborators', existingCol.id), { registration }, { merge: true });
           }
         }
       }
@@ -272,12 +328,16 @@ export const App: React.FC = () => {
         updatedAt: new Date().toISOString()
       }, { merge: true });
       
-      // Update names in employee slots if they were changed
-      if (data.id && data.name) {
+      // Update names and registrations in employee slots if they were changed
+      if (data.id && (data.name || data.registration)) {
         const affectedEmployees = employees.filter(e => e.collaboratorId === data.id);
         for (const emp of affectedEmployees) {
-          if (emp.name !== data.name) {
-            await setDoc(doc(db, 'employees', emp.id), { name: data.name }, { merge: true });
+          const updates: any = {};
+          if (data.name && emp.name !== data.name) updates.name = data.name;
+          if (data.registration && emp.registration !== data.registration) updates.registration = data.registration;
+          
+          if (Object.keys(updates).length > 0) {
+            await setDoc(doc(db, 'employees', emp.id), updates, { merge: true });
           }
         }
       }
@@ -1049,6 +1109,226 @@ export const App: React.FC = () => {
     }
 
     doc.save(`Quadro_Pessoal_Planilha_${now.replace(/\//g, '-')}.pdf`);
+  };
+
+  const handleSaveTraining = async (data: Partial<TrainingRecord>) => {
+    try {
+      const id = data.id || doc(collection(db, 'training_records')).id;
+      const record = {
+        ...data,
+        id,
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(doc(db, 'training_records', id), record, { merge: true });
+      exportTrainingToPDF(record as TrainingRecord);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'training_records');
+    }
+  };
+
+  const handleDeleteTraining = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'training_records', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `training_records/${id}`);
+    }
+  };
+
+  const handleSaveTrainingTemplate = async (template: TrainingTemplate) => {
+    try {
+      await setDoc(doc(db, 'settings', 'training_template'), template);
+      setIsTemplateModalOpen(false);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'settings/training_template');
+    }
+  };
+
+  const exportTrainingToPDF = (training: TrainingRecord) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+    const footerH = 15;
+    let y = 10;
+
+    const drawHeader = (startY: number) => {
+      doc.setLineWidth(0.4);
+      doc.setDrawColor(0);
+      doc.rect(10, startY, 50, 18);  // Logo Box
+      doc.rect(60, startY, 100, 18); // Title Box
+      doc.rect(160, startY, 40, 18); // Code Box
+
+      if (trainingTemplate.logoBase64) {
+        try {
+          doc.addImage(trainingTemplate.logoBase64, 'PNG', 12, startY + 1, 46, 16);
+        } catch (e) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(trainingTemplate.titleFontSize - 4);
+          doc.text(trainingTemplate.companyName, 12, startY + 6);
+          doc.text(trainingTemplate.subCompanyName, 12, startY + 11);
+          doc.setFontSize(trainingTemplate.baseFontSize - 5);
+          doc.setFont('helvetica', 'normal');
+          doc.text(trainingTemplate.subtitle, 12, startY + 15);
+        }
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(trainingTemplate.titleFontSize - 4);
+        doc.text(trainingTemplate.companyName, 12, startY + 6);
+        doc.text(trainingTemplate.subCompanyName, 12, startY + 11);
+        doc.setFontSize(trainingTemplate.baseFontSize - 5);
+        doc.setFont('helvetica', 'normal');
+        doc.text(trainingTemplate.subtitle, 12, startY + 15);
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(trainingTemplate.titleFontSize);
+      doc.text('LISTA DE PRESENÇA', 110, startY + 11, { align: 'center' }); 
+      
+      doc.setFontSize(trainingTemplate.baseFontSize + 1);
+      doc.setFont('helvetica', 'bold');
+      doc.text(trainingTemplate.formCode, 180, startY + 11, { align: 'center' });
+    };
+
+    const drawFooter = () => {
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(trainingTemplate.baseFontSize - 4);
+        doc.setFont('helvetica', 'normal');
+        doc.text(trainingTemplate.footerText, 10, pageHeight - 8);
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 10, pageHeight - 8, { align: 'right' });
+      }
+    };
+
+    const checkPageBreak = (neededH: number, repeatHeader: boolean = true) => {
+      if (y + neededH > pageHeight - footerH) {
+        doc.addPage();
+        y = 10;
+        if (repeatHeader) {
+          drawHeader(y);
+          y += 18;
+        }
+        // Always reset to a default state, or caller must re-set
+        doc.setFont('helvetica', 'normal');
+        return true;
+      }
+      return false;
+    };
+
+    // --- Page 1 Start ---
+    drawHeader(y);
+    y += 18;
+
+    const rowH = 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(trainingTemplate.baseFontSize - 2.5);
+
+    // Info Rows
+    const infoRows = [
+      { label: 'TREINAMENTO:', val: training.training, cols: [50, 140] },
+      { label: 'DATA:', val: training.date.split('-').reverse().join('/'), label2: 'CARGA HORÁRIA (H):', val2: training.duration, cols: [50, 40, 60, 40] },
+      { label: 'LOCAL:', val: training.location, cols: [50, 140] },
+      { label: 'INSTRUTOR:', val: training.instructor, cols: [50, 140] }
+    ];
+
+    infoRows.forEach(row => {
+      checkPageBreak(rowH);
+      let xPos = 10;
+      if (row.cols.length === 2) {
+        doc.rect(xPos, y, row.cols[0], rowH);
+        doc.text(row.label, xPos + 2, y + 4.5);
+        doc.rect(xPos + row.cols[0], y, row.cols[1], rowH);
+        doc.setFont('helvetica', 'normal');
+        doc.text(row.val, xPos + row.cols[0] + 2, y + 4.5);
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.rect(10, y, 50, rowH); doc.text('DATA:', 12, y + 4.5);
+        doc.rect(60, y, 40, rowH); doc.setFont('helvetica', 'normal'); doc.text(row.val, 62, y + 4.5);
+        doc.rect(100, y, 60, rowH); doc.setFont('helvetica', 'bold'); doc.text('CARGA HORÁRIA (H):', 102, y + 4.5);
+        doc.rect(160, y, 40, rowH); doc.setFont('helvetica', 'normal'); doc.text(row.val2 || '', 162, y + 4.5);
+      }
+      y += rowH;
+    });
+
+    y += 2; // Spacer
+
+    // Table Header
+    const colWidths = [10, 25, 100, 55]; // Reduzi Nome completo (115 -> 100), aumentei Visto (40 -> 55)
+    const colLabels = ['Nº', 'Matrícula', 'Nome completo (legível)', 'Visto'];
+    checkPageBreak(rowH);
+    let xHead = 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(trainingTemplate.baseFontSize - 3.5);
+    colWidths.forEach((w, i) => {
+      doc.rect(xHead, y, w, rowH);
+      doc.text(colLabels[i], xHead + w/2, y + 4.5, { align: 'center' });
+      xHead += w;
+    });
+    y += rowH;
+
+    // Participants Rows
+    const participantRowH = 9; // Increased height
+    const totalRows = Math.max(13, training.participants.length);
+    doc.setFont('helvetica', 'normal'); 
+    doc.setFontSize(trainingTemplate.baseFontSize - 2);
+    for (let i = 0; i < totalRows; i++) {
+        if (checkPageBreak(participantRowH)) {
+            // Re-apply participant font style after page break
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(trainingTemplate.baseFontSize - 2);
+        }
+        const participant = training.participants[i];
+        let xPos = 10;
+        colWidths.forEach((w, j) => {
+            doc.rect(xPos, y, w, participantRowH);
+            if (participant) {
+                if (j === 0) doc.text((i + 1).toString().padStart(2, '0'), xPos + w/2, y + 5.5, { align: 'center' });
+                if (j === 1) doc.text(participant.registration, xPos + w/2, y + 5.5, { align: 'center' });
+                if (j === 2) doc.text(participant.name.toUpperCase(), xPos + 2, y + 5.5);
+            } else if (j === 0) {
+              doc.text((i + 1).toString().padStart(2, '0'), xPos + w/2, y + 5.5, { align: 'center' });
+            }
+            xPos += w;
+        });
+        y += participantRowH;
+    }
+
+    // Programming Content Section
+    y += 4;
+    checkPageBreak(8 + 8 + 60); // Repetir cabeçalho se houver quebra de página
+
+    // Programming Content Header
+    doc.rect(10, y, pageWidth - 20, 8);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(trainingTemplate.baseFontSize - 2);
+    doc.text('Conteúdo Programático', pageWidth/2, y + 5.5, { align: 'center' });
+    y += 8;
+
+    doc.rect(10, y, pageWidth - 20, 8);
+    doc.setFontSize(trainingTemplate.baseFontSize - 4);
+    doc.text('Obs.: Preencha o conteúdo aplicado no treinamento ou curso', 12, y + 5);
+    y += 8;
+
+    const stripHtml = (html: string) => {
+      const d = new DOMParser().parseFromString(html, 'text/html');
+      return d.body.textContent || "";
+    };
+
+    const rawContent = stripHtml(training.content);
+    const splitContent = doc.splitTextToSize(rawContent, pageWidth - 30);
+    const contentH = Math.max(60, (splitContent.length * 6) + 10); // Dynamic height but min 60
+    
+    checkPageBreak(contentH); // Permite repetição do cabeçalho
+    doc.rect(10, y, pageWidth - 20, contentH);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(trainingTemplate.baseFontSize - 1);
+    doc.text(splitContent, 15, y + 10);
+    y += contentH;
+
+    // Final Footer
+    drawFooter();
+    doc.save(`Ficha_Treinamento_${training.date}.pdf`);
   };
 
   const findEmployee = (s: string, m: string, sh: string, r: string) => 
@@ -1856,6 +2136,13 @@ export const App: React.FC = () => {
                         <Database size={18} className="text-emerald-500" />
                         Banco de Dados
                       </button>
+                      <button 
+                        onClick={() => { setIsExtraMenuOpen(false); setIsTrainingModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-slate-700 hover:bg-slate-50 text-[11px] font-black uppercase transition-colors border-t border-slate-50"
+                      >
+                        <FileText size={18} className="text-blue-600" />
+                        Treinamento / DDP
+                      </button>
                     </div>
                   </>
                 )}
@@ -2256,6 +2543,23 @@ export const App: React.FC = () => {
         }
       }} />
       <HistoryModal isOpen={isHistoryModalOpen} onClose={() => setIsHistoryModalOpen(false)} logs={personnelLogs} />
+      <TrainingModal 
+        isOpen={isTrainingModalOpen} 
+        onClose={() => setIsTrainingModalOpen(false)} 
+        collaborators={collaborators} 
+        employees={employees} 
+        records={trainingRecords}
+        onSave={handleSaveTraining} 
+        onDelete={handleDeleteTraining}
+        onEditTemplate={() => setIsTemplateModalOpen(true)}
+      />
+      
+      <TrainingTemplateModal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        template={trainingTemplate}
+        onSave={handleSaveTrainingTemplate}
+      />
       
       <UserManagementModal 
         isOpen={isUserManagementOpen} 
@@ -2263,6 +2567,7 @@ export const App: React.FC = () => {
         users={systemUsers} 
         onUpdateUsers={setSystemUsers}
         availableRoles={availableRoles} 
+        collaborators={collaborators}
       />
       {isDatabaseModalOpen && (
         <DatabaseModal 
@@ -2366,7 +2671,7 @@ export const App: React.FC = () => {
   );
 };
 
-const UserManagementModal: React.FC<{ isOpen: boolean; onClose: () => void; users: SystemUser[]; onUpdateUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>; availableRoles: string[] }> = ({ isOpen, onClose, users, onUpdateUsers, availableRoles }) => {
+const UserManagementModal: React.FC<{ isOpen: boolean; onClose: () => void; users: SystemUser[]; onUpdateUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>; availableRoles: string[]; collaborators: Collaborator[] }> = ({ isOpen, onClose, users, onUpdateUsers, availableRoles, collaborators }) => {
   const [name, setName] = useState('');
   const [registration, setRegistration] = useState('');
   const [role, setRole] = useState(availableRoles[0] || '');
@@ -2458,7 +2763,25 @@ const UserManagementModal: React.FC<{ isOpen: boolean; onClose: () => void; user
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">Matrícula</label>
-                <input value={registration} onChange={e => setRegistration(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all" placeholder="Ex: 2020" />
+                <div className="relative group">
+                  <input 
+                    value={registration} 
+                    onChange={e => {
+                      setRegistration(e.target.value);
+                      const col = (collaborators || []).find(c => c.registration === e.target.value);
+                      if (col) {
+                        setName(col.name);
+                        setRole(col.role || role);
+                      }
+                    }} 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all font-mono" 
+                    placeholder="Ex: 0001" 
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Search size={16} className="text-slate-300" />
+                  </div>
+                </div>
+                <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 ml-1 tracking-tighter">Digite a matrícula para buscar no banco central</p>
               </div>
             </div>
             <div>
