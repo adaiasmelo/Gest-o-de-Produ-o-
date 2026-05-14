@@ -1,3 +1,4 @@
+/* Service Worker - Manupackaging v4 */
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -7,6 +8,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Apenas repassa a requisição, necessário para o PWA ser instalável
-  event.respondWith(fetch(event.request));
+  // Obrigatório para o PWA ser instalável
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
+  );
 });

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#0f3a44">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v=4">
     <link rel="icon" id="favicon-link" href="https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png">
     <title>Manupackaging - Controle de Produção</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -142,9 +142,13 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(err => {
-                    console.log('SW registration failed: ', err);
-                });
+                navigator.serviceWorker.register('/sw.js?v=4', { scope: '/' })
+                    .then(reg => {
+                        console.log('SW registrado com sucesso');
+                        // Força atualização se houver um novo SW
+                        reg.update();
+                    })
+                    .catch(err => console.log('Erro no SW: ', err));
             });
         }
     </script>
