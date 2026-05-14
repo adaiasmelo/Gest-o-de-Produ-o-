@@ -200,7 +200,7 @@ export const App: React.FC = () => {
     // Update Favicon
     const favicon = document.getElementById('favicon-link') as HTMLLinkElement;
     if (favicon) {
-      favicon.href = systemLogo || "https://cdn-icons-png.flaticon.com/512/2271/2271062.png";
+      favicon.href = systemLogo || "https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png";
     }
   }, [systemLogo, settingsLoaded]);
 
@@ -1622,7 +1622,7 @@ export const App: React.FC = () => {
                 {systemLogo ? (
                   <img src={systemLogo} alt="Logo" className="w-full h-full object-cover relative z-10" />
                 ) : (
-                  <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-12 h-12 brightness-0 invert relative z-10" />
+                  <img src="https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png" alt="Default Logo" className="w-full h-full object-contain p-2 relative z-10" />
                 )}
               </div>
               <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter text-center leading-[0.9]">
@@ -1821,7 +1821,7 @@ export const App: React.FC = () => {
             {systemLogo ? (
               <img src={systemLogo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-6 h-6 md:w-7 md:h-7 brightness-0 invert" />
+              <img src="https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png" alt="Default Logo" className="w-full h-full object-contain p-1" />
             )}
           </div>
           <div className="min-w-0">
@@ -3247,7 +3247,7 @@ const SettingsModal: React.FC<{
                     {systemLogo ? (
                       <img src={systemLogo} alt="Logo Prev" className="w-full h-full object-cover" />
                     ) : (
-                      <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-8 h-8 opacity-20" />
+                      <img src="https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png" alt="Default Logo" className="w-8 h-8 opacity-40 object-contain" />
                     )}
                     <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                       <span className="text-[10px] font-black text-white uppercase tracking-widest text-center px-2">Alterar Logo</span>

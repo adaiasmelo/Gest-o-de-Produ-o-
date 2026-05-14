@@ -1,9 +1,9 @@
-const CACHE_NAME = 'manupackaging-v1';
+const CACHE_NAME = 'manupackaging-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  'https://cdn-icons-png.flaticon.com/512/2271/2271062.png'
+  'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png'
 ];
 
 self.addEventListener('install', (event) => {
