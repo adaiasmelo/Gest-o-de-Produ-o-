@@ -1,0 +1,17 @@
+{
+  "name": "Gestão e Controle de Produção",
+  "short_name": "Manupackaging",
+  "description": "Sistema de Gestão Industrial e Controle de Produção",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2618/2618488.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
