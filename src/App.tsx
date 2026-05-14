@@ -200,7 +200,7 @@ export const App: React.FC = () => {
     // Update Favicon
     const favicon = document.getElementById('favicon-link') as HTMLLinkElement;
     if (favicon) {
-      favicon.href = systemLogo || "https://cdn-icons-png.flaticon.com/512/2618/2618488.png";
+      favicon.href = systemLogo || "https://cdn-icons-png.flaticon.com/512/2271/2271062.png";
     }
 
     // Update PWA Manifest dynamically
@@ -214,7 +214,7 @@ export const App: React.FC = () => {
       "theme_color": "#3b82f6",
       "icons": [
         {
-          "src": systemLogo || "https://cdn-icons-png.flaticon.com/512/2618/2618488.png",
+          "src": systemLogo || "https://cdn-icons-png.flaticon.com/512/2271/2271062.png",
           "sizes": "512x512",
           "type": "image/png",
           "purpose": "any maskable"
@@ -1653,7 +1653,7 @@ export const App: React.FC = () => {
                 {systemLogo ? (
                   <img src={systemLogo} alt="Logo" className="w-full h-full object-cover relative z-10" />
                 ) : (
-                  <Cpu size={48} className="relative z-10" />
+                  <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-12 h-12 brightness-0 invert relative z-10" />
                 )}
               </div>
               <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter text-center leading-[0.9]">
@@ -1852,7 +1852,7 @@ export const App: React.FC = () => {
             {systemLogo ? (
               <img src={systemLogo} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <Cpu className="w-5 h-5 md:w-6 md:h-6" />
+              <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-6 h-6 md:w-7 md:h-7 brightness-0 invert" />
             )}
           </div>
           <div className="min-w-0">
@@ -3278,7 +3278,7 @@ const SettingsModal: React.FC<{
                     {systemLogo ? (
                       <img src={systemLogo} alt="Logo Prev" className="w-full h-full object-cover" />
                     ) : (
-                      <Cpu size={32} className="text-slate-300" />
+                      <img src="https://cdn-icons-png.flaticon.com/512/2271/2271062.png" alt="Default Logo" className="w-8 h-8 opacity-20" />
                     )}
                     <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
                       <span className="text-[10px] font-black text-white uppercase tracking-widest text-center px-2">Alterar Logo</span>
