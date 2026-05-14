@@ -202,38 +202,7 @@ export const App: React.FC = () => {
     if (favicon) {
       favicon.href = systemLogo || "https://cdn-icons-png.flaticon.com/512/2271/2271062.png";
     }
-
-    // Update PWA Manifest dynamically
-    const manifest = {
-      "name": systemName || "Gestão e Controle de Produção",
-      "short_name": systemName?.substring(0, 15) || "Manupackaging",
-      "description": "Sistema de Gestão Industrial e Controle de Produção",
-      "start_url": "/",
-      "display": "standalone",
-      "background_color": "#ffffff",
-      "theme_color": "#3b82f6",
-      "icons": [
-        {
-          "src": systemLogo || "https://cdn-icons-png.flaticon.com/512/2271/2271062.png",
-          "sizes": "512x512",
-          "type": "image/png",
-          "purpose": "any maskable"
-        }
-      ]
-    };
-    
-    const stringManifest = JSON.stringify(manifest);
-    const blob = new Blob([stringManifest], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(blob);
-    const manifestLink = document.getElementById('manifest-link') as HTMLLinkElement;
-    if (manifestLink) {
-      manifestLink.href = manifestURL;
-    }
-
-    return () => {
-      URL.revokeObjectURL(manifestURL);
-    };
-  }, [systemLogo, systemName, settingsLoaded]);
+  }, [systemLogo, settingsLoaded]);
 
   useEffect(() => {
     if (!currentUser) return;
