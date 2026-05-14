@@ -95,9 +95,13 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
     e.preventDefault();
     
     // Validações básicas
-    if (!formData.name && actionType === 'create') return alert("Nome obrigatório");
+    if (!formData.name && actionType === 'create' && formData.status !== 'Em Contratação') return alert("Nome obrigatório");
 
     let finalData = { ...formData };
+    if (formData.status === 'Em Contratação' && !formData.name) {
+        finalData.name = 'Em Contratação';
+    }
+    
     let actionLog = '';
     let detailsLog = '';
 
@@ -397,17 +401,33 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({ isOpen, onClose, onSave, 
              </div>
           )}
 
-          <div className="pt-4 border-t border-slate-100 flex gap-3">
-             <button type="button" onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[10px] uppercase hover:bg-slate-50 transition-all">Cancelar</button>
-             <button type="submit" className={`flex-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
-                 actionType === 'delete' ? 'bg-red-700 shadow-red-200 hover:bg-red-800' :
-                 actionType === 'terminate' ? 'bg-red-500 shadow-red-200 hover:bg-red-600' :
-                 actionType === 'vacation' ? 'bg-orange-600 shadow-orange-200 hover:bg-orange-700' :
-                 actionType === 'medical' ? 'bg-purple-600 shadow-purple-200 hover:bg-purple-700' :
-                 'bg-blue-600 shadow-blue-200 hover:bg-blue-700'
-             }`}>
-                <Save size={16} /> {actionType === 'delete' ? 'Confirmar Exclusão' : 'Confirmar'}
-             </button>
+          <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+             <div className="flex gap-3">
+                <button type="button" onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-500 rounded-2xl font-black text-[10px] uppercase hover:bg-slate-50 transition-all">Cancelar</button>
+                <button type="submit" className={`flex-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    actionType === 'delete' ? 'bg-red-700 shadow-red-200 hover:bg-red-800' :
+                    actionType === 'terminate' ? 'bg-red-500 shadow-red-200 hover:bg-red-600' :
+                    actionType === 'vacation' ? 'bg-orange-600 shadow-orange-200 hover:bg-orange-700' :
+                    actionType === 'medical' ? 'bg-purple-600 shadow-purple-200 hover:bg-purple-700' :
+                    'bg-blue-600 shadow-blue-200 hover:bg-blue-700'
+                }`}>
+                   <Save size={16} /> {actionType === 'delete' ? 'Confirmar Exclusão' : 'Confirmar'}
+                </button>
+             </div>
+             
+             {actionType === 'create' && (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const hData = { ...formData, status: 'Em Contratação' as any, name: 'Em Contratação' };
+                    onSave(hData, 'Contratação', 'Vaga aberta diretamente para contratação');
+                    onClose();
+                  }}
+                  className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black text-[10px] uppercase hover:bg-orange-600 transition-all shadow-lg shadow-orange-100 flex items-center justify-center gap-2"
+                >
+                  <Briefcase size={16} /> Abrir Vaga (Em Contratação)
+                </button>
+             )}
           </div>
 
         </form>

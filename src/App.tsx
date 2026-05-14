@@ -5,8 +5,9 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
@@ -26,6 +27,7 @@ import ShiftModal from './components/ShiftModal';
 import DatabaseModal from './components/DatabaseModal';
 import TrainingModal from './components/TrainingModal';
 import TrainingTemplateModal from './components/TrainingTemplateModal';
+import ConfirmDialog from './components/ConfirmDialog';
 import { Database } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#64748b', '#1e293b', '#64748b', '#475569', '#94a3b8'];
@@ -54,6 +56,37 @@ export const App: React.FC = () => {
       return null;
     }
   });
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    type: 'danger'
+  });
+
+  const openConfirm = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' | 'info' = 'danger') => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: async () => {
+        try {
+          await onConfirm();
+        } catch (e) {
+          console.error("Confirm action failed:", e);
+        }
+      },
+      type
+    });
+  };
+
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
   const [systemName, setSystemName] = useState('CONTROLE DE PRODUÇÃO');
   const [loginSystemName, setLoginSystemName] = useState('CONTROLE DE PRODUÇÃO');
@@ -104,6 +137,7 @@ export const App: React.FC = () => {
     titleFontSize: 14,
     footerText: 'Revisão: 004 Data emissão: 08/01/2016 Data revisão: 22/01/2024 Elaboração: Leila Silva Aprovação: Lara Andrade',
   });
+
   const [trainingRecords, setTrainingRecords] = useState<TrainingRecord[]>([]);
   const [showEremaChart, setShowEremaChart] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ProductionEntry | null>(null);
@@ -121,6 +155,23 @@ export const App: React.FC = () => {
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricUser, setBiometricUser] = useState<SystemUser | null>(null);
+  const [notifications, setNotifications] = useState<{ id: string, message: string, type: 'success' | 'info', operator: string }[]>([]);
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    notificationAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+  }, []);
+
+  const addNotification = (message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setNotifications(prev => [...prev as any, { id, message, type: 'success', operator: 'Sistema' }]);
+    if (notificationAudioRef.current) {
+        notificationAudioRef.current.play().catch(e => console.error("Audio play failed:", e));
+    }
+    setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 6000);
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const personnelRef = useRef<HTMLDivElement>(null);
@@ -146,9 +197,43 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
+    const audioRef = { current: new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3') };
+    audioRef.current.volume = 0.5;
+
+    let isInitialLoad = true;
     const unsubProduction = onSnapshot(collection(db, 'productionEntries'), (snap) => {
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductionEntry));
       setProductionData(data.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')));
+
+      // Notify on new entries
+      if (!isInitialLoad) {
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const newEntry = change.doc.data() as ProductionEntry;
+            const id = Math.random().toString(36).substring(7);
+            
+            // Play sound
+            audioRef.current.play().catch(e => console.log('Autoplay blocked or audio error:', e));
+
+            // Add notification
+            setNotifications(prev => [
+              { 
+                id, 
+                message: `Novo lançamento: ${formatWeight(newEntry.netWeight)} na máquina ${newEntry.machine}`, 
+                type: 'success',
+                operator: newEntry.operator
+              },
+              ...prev
+            ]);
+
+            // Auto remove
+            setTimeout(() => {
+              setNotifications(prev => prev.filter(n => n.id !== id));
+            }, 5000);
+          }
+        });
+      }
+      isInitialLoad = false;
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'productionEntries'));
 
     const unsubEmployees = onSnapshot(collection(db, 'employees'), (snap) => {
@@ -169,11 +254,16 @@ export const App: React.FC = () => {
     const unsubTemplate = onSnapshot(doc(db, 'settings', 'training_template'), (snap) => {
       if (snap.exists()) {
         const data = snap.data() as TrainingTemplate;
-        // Migration: If footer is still the old one, update it automatically
-        if (data.footerText && data.footerText.includes('Gestão Industrial') && data.footerText.includes('13/05/2026')) {
-          const newFooter = 'Revisão: 004 Data emissão: 08/01/2016 Data revisão: 22/01/2024 Elaboração: Leila Silva Aprovação: Lara Andrade';
-          setDoc(doc(db, 'settings', 'training_template'), { ...data, footerText: newFooter }, { merge: true });
-          setTrainingTemplate({ ...data, footerText: newFooter });
+        // Forced Migration: If footer is still the old one, update it automatically
+        const newFooter = 'Revisão: 004 Data emissão: 08/01/2016 Data revisão: 22/01/2024 Elaboração: Leila Silva Aprovação: Lara Andrade';
+        
+        if (data.footerText && (data.footerText.includes('Gestão Industrial') || data.footerText.includes('13/05/2026') || data.footerText.includes('Status: Aprovado') || data.footerText.includes('Rev.: 00'))) {
+          if (data.footerText !== newFooter) {
+            setDoc(doc(db, 'settings', 'training_template'), { ...data, footerText: newFooter }, { merge: true });
+            setTrainingTemplate({ ...data, footerText: newFooter });
+          } else {
+            setTrainingTemplate(data);
+          }
         } else {
           setTrainingTemplate(data);
         }
@@ -1070,7 +1160,7 @@ export const App: React.FC = () => {
                     headStyles: { fillColor: [71, 85, 105], fontSize: 10, halign: 'center' },
                     styles: { fontSize: 11, cellPadding: 3.5 },
                     columnStyles: {
-                        0: { cellWidth: 100, fontStyle: 'bold' },
+                        0: { cellWidth: 100 },
                         1: { cellWidth: 52 },
                         2: { cellWidth: 30, halign: 'center' }
                     },
@@ -2054,18 +2144,22 @@ export const App: React.FC = () => {
                                     <td className="px-4 py-3 text-right text-slate-600">{entry.processoMin}</td>
                                     <td className="px-4 py-3 text-right text-slate-600">{entry.outrosMin}</td>
                                     <td className="px-4 py-3 text-center">
-                                      {canEditProduction && (
-                                        <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button onClick={() => { setEditingEntry(entry); setIsModalOpen(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={13}/></button>
-                                          <button onClick={async () => { 
-                                            if(confirm('Excluir este lançamento?')) {
-                                              try {
-                                                await deleteDoc(doc(db, 'productionEntries', entry.id));
-                                              } catch(e) { console.error(e); }
-                                            } 
-                                          }} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={13}/></button>
-                                        </div>
-                                      )}
+                                          {canEditProduction && (
+                                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <button onClick={() => { setEditingEntry(entry); setIsModalOpen(true); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 size={13}/></button>
+                                              <button onClick={() => { 
+                                                openConfirm(
+                                                  'Confirmar Exclusão',
+                                                  `Deseja realmente excluir este lançamento de ${entry.operator}?`,
+                                                  async () => {
+                                                    try {
+                                                      await deleteDoc(doc(db, 'productionEntries', entry.id));
+                                                    } catch(e) { console.error(e); }
+                                                  }
+                                                );
+                                              }} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={13}/></button>
+                                            </div>
+                                          )}
                                     </td>
                                 </tr>
                             ))}
@@ -2486,9 +2580,14 @@ export const App: React.FC = () => {
 
       <LaunchModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={async (e) => {
         try {
+          const isNew = !editingEntry;
           const id = editingEntry ? editingEntry.id : Math.random().toString(36).substr(2, 9);
           const entry = { ...e, id, userId: currentUser.uid, updatedAt: new Date().toISOString() };
           await setDoc(doc(db, 'productionEntries', id), entry);
+          
+          if (isNew) {
+            addNotification(`Novo lançamento realizado por ${entry.operator} na ${entry.machine}`);
+          }
         } catch (error) {
           console.error("Erro ao salvar:", error);
           alert("Ocorreu um erro ao salvar o lançamento.");
@@ -2550,7 +2649,13 @@ export const App: React.FC = () => {
         employees={employees} 
         records={trainingRecords}
         onSave={handleSaveTraining} 
-        onDelete={handleDeleteTraining}
+        onDelete={(id) => {
+          openConfirm(
+            'Excluir Ficha',
+            'Tem certeza que deseja excluir esta ficha de treinamento permanentemente?',
+            () => handleDeleteTraining(id)
+          );
+        }}
         onEditTemplate={() => setIsTemplateModalOpen(true)}
       />
       
@@ -2609,50 +2714,61 @@ export const App: React.FC = () => {
               console.error(err);
             }
           }}
-          onDelete={async (id, name) => {
-            if(!confirm(`Tem certeza que deseja EXCLUIR o slot de ${name}? Isso removerá o registro e o slot do quadro caso seja um extra.`)) return;
-            try {
-              await deleteDoc(doc(db, 'employees', id));
-              
-              const now = new Date().toISOString();
-              const logId = Math.random().toString(36).substring(2, 15);
-              await setDoc(doc(db, 'personnelLogs', logId), {
-                id: logId,
-                userId: currentUser.uid,
-                date: now,
-                employeeName: name,
-                action: 'Exclusão' as any,
-                details: `Exclusão permanente via Banco de Dados`,
-                user: loggedUser?.name || 'Sistema'
-              });
-            } catch (err) {
-              console.error(err);
-            }
+          onDelete={(id, name) => {
+            openConfirm(
+              'Excluir Slot',
+              `Tem certeza que deseja EXCLUIR o slot de ${name}? Isso removerá o registro e o slot do quadro caso seja um extra.`,
+              async () => {
+                try {
+                  await deleteDoc(doc(db, 'employees', id));
+                  
+                  const now = new Date().toISOString();
+                  const logId = Math.random().toString(36).substring(2, 15);
+                  await setDoc(doc(db, 'personnelLogs', logId), {
+                    id: logId,
+                    userId: currentUser.uid,
+                    date: now,
+                    employeeName: name,
+                    action: 'Exclusão' as any,
+                    details: `Exclusão permanente via Banco de Dados`,
+                    user: loggedUser?.name || 'Sistema'
+                  });
+                } catch (err) {
+                  console.error(err);
+                }
+              }
+            );
           }}
-          onTerminate={async (id, name) => {
-            if(!confirm(`Deseja DESLIGAR ${name}? Isso abrirá uma vaga disponível no quadro.`)) return;
-            try {
-              const now = new Date().toISOString();
-              await setDoc(doc(db, 'employees', id), { 
-                status: 'Em Contratação', 
-                name: 'Em Contratação',
-                updatedAt: now, 
-                userId: currentUser.uid 
-              }, { merge: true });
-              
-              const logId = Math.random().toString(36).substring(2, 15);
-              await setDoc(doc(db, 'personnelLogs', logId), {
-                id: logId,
-                userId: currentUser.uid,
-                date: now,
-                employeeName: name,
-                action: 'Desligamento' as any,
-                details: `Desligamento via Banco de Dados (vaga aberta)`,
-                user: loggedUser?.name || 'Sistema'
-              });
-            } catch (err) {
-              console.error(err);
-            }
+          onTerminate={(id, name) => {
+            openConfirm(
+              'Confirmar Desligamento',
+              `Deseja DESLIGAR ${name}? Isso abrirá uma vaga disponível no quadro.`,
+              async () => {
+                try {
+                  const now = new Date().toISOString();
+                  await setDoc(doc(db, 'employees', id), { 
+                    status: 'Em Contratação', 
+                    name: 'Em Contratação',
+                    updatedAt: now, 
+                    userId: currentUser.uid 
+                  }, { merge: true });
+                  
+                  const logId = Math.random().toString(36).substring(2, 15);
+                  await setDoc(doc(db, 'personnelLogs', logId), {
+                    id: logId,
+                    userId: currentUser.uid,
+                    date: now,
+                    employeeName: name,
+                    action: 'Desligamento' as any,
+                    details: `Desligamento via Banco de Dados (vaga aberta)`,
+                    user: loggedUser?.name || 'Sistema'
+                  });
+                } catch (err) {
+                  console.error(err);
+                }
+              },
+              'warning'
+            );
           }}
         />
       )}
@@ -2667,6 +2783,68 @@ export const App: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Real-time Notifications Portal */}
+      <div className="fixed top-6 right-6 z-[250] flex flex-col gap-3 pointer-events-none w-full max-w-sm">
+        <AnimatePresence>
+          {notifications.map((n) => (
+            <motion.div
+              key={n.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.95 }}
+              className="pointer-events-auto bg-white/95 backdrop-blur-xl border border-blue-100 p-5 rounded-[2rem] shadow-2xl shadow-blue-900/10 flex items-start gap-4 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+                <Bell size={24} className="animate-bounce" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5">
+                    <Activity size={12} /> Novo Lançamento
+                  </p>
+                  <button 
+                    onClick={() => setNotifications(prev => prev.filter(notif => notif.id !== n.id))}
+                    className="text-slate-300 hover:text-slate-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <p className="text-xs font-black text-slate-800 leading-tight uppercase tracking-tight">
+                  {n.message}
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center">
+                    <Users size={8} className="text-slate-400" />
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                    Resp: {n.operator}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="absolute bottom-0 left-0 h-1 bg-blue-600/10 w-full">
+                <motion.div 
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 5, ease: "linear" }}
+                  className="h-full bg-blue-600"
+                />
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        type={confirmDialog.type}
+      />
     </div>
   );
 };

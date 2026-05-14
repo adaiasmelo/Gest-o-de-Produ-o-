@@ -29,7 +29,6 @@ const TrainingModal: React.FC<TrainingModalProps> = ({ isOpen, onClose, onSave, 
   const [participants, setParticipants] = useState<Collaborator[]>([]);
   const [expandedSectors, setExpandedSectors] = useState<Record<string, boolean>>({});
   const [tempSelection, setTempSelection] = useState<Set<string>>(new Set());
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (records.length === 0) setView('form');
@@ -206,40 +205,6 @@ const TrainingModal: React.FC<TrainingModalProps> = ({ isOpen, onClose, onSave, 
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/30 relative">
-          {/* Confirmation Overlay */}
-          {confirmDeleteId && (
-            <div className="absolute inset-0 z-[160] bg-white/90 backdrop-blur-md flex items-center justify-center p-8 animate-in fade-in duration-300">
-              <div className="max-w-xs w-full text-center space-y-6">
-                <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-                  <Trash2 size={32} />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight">Confirmar Exclusão</h4>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed px-4">
-                    Tem certeza que deseja excluir esta ficha de treinamento? Esta ação não pode ser desfeita.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <button 
-                    onClick={() => {
-                        onDelete(confirmDeleteId);
-                        setConfirmDeleteId(null);
-                    }}
-                    className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg shadow-red-100"
-                  >
-                    Sim, Excluir Ficha
-                  </button>
-                  <button 
-                    onClick={() => setConfirmDeleteId(null)}
-                    className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {view === 'history' ? (
             <div className="p-8 space-y-6">
               {records.length > 0 ? (
@@ -254,7 +219,7 @@ const TrainingModal: React.FC<TrainingModalProps> = ({ isOpen, onClose, onSave, 
                           <button onClick={() => handleEdit(record)} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-lg transition-colors">
                             <Edit3 size={16} />
                           </button>
-                          <button onClick={() => setConfirmDeleteId(record.id)} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg transition-colors">
+                          <button onClick={() => onDelete(record.id)} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-lg transition-colors">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -471,6 +436,7 @@ const TrainingModal: React.FC<TrainingModalProps> = ({ isOpen, onClose, onSave, 
             </button>
           </div>
         )}
+
       </div>
     </div>
   );

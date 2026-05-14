@@ -70,11 +70,17 @@ const DatabaseModal: React.FC<DatabaseModalProps> = ({
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const handleAdd = () => {
-    if (!newEmp.name.trim()) {
+    if (!newEmp.name.trim() && newEmp.status !== 'Em Contratação') {
       alert('Por favor, selecione um colaborador.');
       return;
     }
-    onAdd(newEmp);
+    
+    const empToSave = { ...newEmp };
+    if (newEmp.status === 'Em Contratação' && !newEmp.name.trim()) {
+      empToSave.name = 'Em Contratação';
+    }
+    
+    onAdd(empToSave);
     setNewEmp({
       name: '',
       role: availableRoles[0] || '',
