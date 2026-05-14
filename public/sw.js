@@ -1,25 +1,14 @@
-/* Service Worker Manupackaging - Final V6 */
-const CACHE_NAME = 'manu-cache-v6';
-
+/* Service Worker Manupackaging - Versão Estável */
 self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        Promise.all([
-            clients.claim(),
-            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-        ])
-    );
+    event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
-    // Apenas repassa para evitar erros no Firebase Auth
-    // Mas a presença desse handler é obrigatória para PWA
-    if (event.request.url.includes('googleapis.com') || event.request.url.includes('firebase')) {
-        return;
-    }
-    
+    // Apenas repassa a requisição sem interferir
+    // Isso evita o erro auth/network-request-failed
     event.respondWith(fetch(event.request));
 });

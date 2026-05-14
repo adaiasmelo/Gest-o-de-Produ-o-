@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0f3a44">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="/manifest.json?v=6">
+    <link rel="manifest" href="/manifest.json">
     <link rel="icon" id="favicon-link" href="https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png">
     <title>Manupackaging - Controle de Produção</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -142,12 +142,11 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js?v=6')
+                navigator.serviceWorker.register('/sw.js')
                     .then(reg => {
-                        console.log('SW V6 OK');
-                        reg.update(); // Força busca por atualizações
+                        console.log('App Pronto para Instalação');
                     })
-                    .catch(err => console.log('SW Erro: ', err));
+                    .catch(err => console.log('Erro PWA: ', err));
             });
         }
     </script>

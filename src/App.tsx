@@ -153,8 +153,6 @@ export const App: React.FC = () => {
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
   
   const [biometricSupported, setBiometricSupported] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricUser, setBiometricUser] = useState<SystemUser | null>(null);
   const [notifications, setNotifications] = useState<{ id: string, message: string, type: 'success' | 'info', operator: string }[]>([]);
@@ -176,15 +174,6 @@ export const App: React.FC = () => {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-    }
-  };
 
   const activeMachines = useMemo(() => ["Cast 1", "Cast 2", "Erema 1", "Ghezzi", "Lintech", "Wutec"], []);
 
@@ -202,17 +191,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     isBiometricAvailable().then(setBiometricSupported);
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-    });
-
-    window.addEventListener('appinstalled', () => {
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-    });
   }, []);
 
   useEffect(() => {
@@ -1785,17 +1763,8 @@ export const App: React.FC = () => {
             </div>
 
             <div className={`mt-2 pt-4 border-t border-slate-100 flex flex-col gap-2 items-center ${!discoveredUser && loginMatricula.length < 3 ? 'mt-1' : ''}`}>
-              {isInstallable && (
-                <button
-                  onClick={handleInstallClick}
-                  className="mb-2 flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition-all animate-bounce border border-emerald-100 shadow-sm"
-                >
-                  <Download size={12} />
-                  Instalar Aplicativo (App)
-                </button>
-              )}
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">Criado por Adaias Melo</p>
-           </div>
+            </div>
         </div>
 
         {/* Biometric Registration Prompt Modal */}

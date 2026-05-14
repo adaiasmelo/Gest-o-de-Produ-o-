@@ -1,10 +1,8 @@
 {
-  "id": "manupackaging-production-v2",
   "name": "Manupackaging - Controle de Produção",
   "short_name": "Manupackaging",
   "description": "Sistema de Gestão Industrial e Controle de Produção",
-  "start_url": ".",
-  "scope": "/",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
