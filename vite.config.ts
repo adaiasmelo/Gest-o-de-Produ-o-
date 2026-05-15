@@ -9,12 +9,18 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      base: '/',
+      manifestFilename: 'manifest.json',
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,vue,txt,woff2}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
+        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // 7MB limit
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/static\.wixstatic\.com\/.*/i,
@@ -40,23 +46,26 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',
-        start_url: '/',
+        start_url: '/?standalone=true',
+        id: '/?standalone=true',
         icons: [
           {
             src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }

@@ -208,23 +208,26 @@ export const App: React.FC = () => {
 
     // Detectar iOS e se é standalone
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true || window.location.search.includes('standalone=true');
     
     setIsIOS(isIOSDevice);
     setIsStandalone(checkStandalone);
 
     const handleBeforeInstall = (e: any) => {
-      console.log('beforeinstallprompt fired');
+      console.log('PWA: beforeinstallprompt disparado!');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
 
     const handleAppInstalled = () => {
+      console.log('PWA: Aplicativo instalado com sucesso');
       setIsInstallable(false);
       setDeferredPrompt(null);
       setIsStandalone(true);
     };
+
+    console.log('PWA: Inicializando listeners de instalação. Standalone:', checkStandalone);
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
