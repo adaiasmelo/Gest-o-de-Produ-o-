@@ -5,7 +5,7 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -3275,6 +3275,22 @@ const SettingsModal: React.FC<{
                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed">
                                1. Toque no botão <span className="text-blue-600 font-extrabold">"Compartilhar"</span> (ícone quadrado com seta).<br/>
                                2. Selecione <span className="text-blue-600 font-extrabold">"Adicionar à Tela de Início"</span>.
+                             </p>
+                           </div>
+                         </div>
+                      </div>
+                    )}
+
+                    {!isInstallable && !isIOS && !isStandalone && (
+                      <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
+                         <div className="flex gap-4 items-start text-left">
+                           <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                             <ExternalLink size={20} />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-[11px] font-black text-blue-800 uppercase leading-none mb-1.5">Aviso de Instalação</p>
+                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
+                               Certifique-se de estar acessando o link <span className="text-blue-600 font-extrabold">diretamente pelo navegador</span> (Chrome ou Samsung Internet) e não por dentro de outros apps ou visualizadores.
                              </p>
                            </div>
                          </div>

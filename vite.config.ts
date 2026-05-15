@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       devOptions: {
@@ -56,6 +56,7 @@ export default defineConfig({
         theme_color: '#0f3a44',
         background_color: '#ffffff',
         display: 'standalone',
+        display_override: ['window-controls-overlay', 'standalone', 'minimal-ui'],
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
