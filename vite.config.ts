@@ -27,7 +27,10 @@ export default defineConfig({
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
-        id: 'manupackaging-pwa',
+        id: 'manupackaging-industrial-pwa',
+        categories: ['productivity', 'industrial'],
+        lang: 'pt-br',
+        dir: 'ltr',
         icons: [
           {
             src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',

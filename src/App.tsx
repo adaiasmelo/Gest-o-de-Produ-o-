@@ -3203,7 +3203,7 @@ const SettingsModal: React.FC<{
     { id: 'goals', label: 'Metas', icon: Target, hidden: !isAdminUser },
     { id: 'config', label: 'Cadastro', icon: Settings, hidden: !isAdminUser },
     { id: 'system', label: 'Sistema', icon: Cpu, hidden: !isAdminUser },
-    { id: 'app', label: 'App', icon: Smartphone, hidden: isStandalone },
+    { id: 'app', label: 'App', icon: Smartphone },
   ].filter(t => !t.hidden);
 
   return (
@@ -3239,19 +3239,35 @@ const SettingsModal: React.FC<{
         <div className="p-6 md:p-10 flex-1 overflow-y-auto custom-scrollbar">
           {activeTab === 'app' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-               <div className="bg-emerald-50 p-6 md:p-8 rounded-[2rem] border border-emerald-100">
+               <div className={`${isStandalone ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'} p-6 md:p-8 rounded-[2rem] border`}>
                   <div className="flex flex-col items-center text-center gap-4">
-                    <div className="w-16 h-16 bg-white rounded-3xl shadow-lg flex items-center justify-center text-emerald-600">
+                    <div className={`w-16 h-16 bg-white rounded-3xl shadow-lg flex items-center justify-center ${isStandalone ? 'text-blue-600' : 'text-emerald-600'}`}>
                       <Smartphone size={32} />
                     </div>
                     <div>
-                      <h4 className="text-lg font-black text-slate-800 uppercase">Versão para Celular</h4>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1">Transforme este site em um aplicativo completo</p>
+                      <h4 className="text-lg font-black text-slate-800 uppercase">
+                        {isStandalone ? 'Aplicativo Instalado' : 'Versão para Celular'}
+                      </h4>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1">
+                        {isStandalone ? 'Você já está utilizando a versão de aplicativo' : 'Transforme este site em um aplicativo completo'}
+                      </p>
                     </div>
                   </div>
 
                   <div className="mt-8 space-y-4">
-                    {isInstallable && (
+                    {isStandalone && (
+                      <div className="bg-white/80 backdrop-blur rounded-[1.5rem] p-6 border border-blue-100 text-center">
+                        <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                          <ShieldCheck size={24} />
+                        </div>
+                        <p className="text-[11px] font-black text-blue-800 uppercase mb-1">Status: Ativo & Instalado</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed">
+                          O sistema está rodando em modo nativo. Você pode acessá-lo diretamente pela sua tela de início.
+                        </p>
+                      </div>
+                    )}
+
+                    {!isStandalone && isInstallable && (
                       <button 
                         onClick={handleInstallClick}
                         className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-emerald-100 border-2 border-white/20"
@@ -3264,7 +3280,7 @@ const SettingsModal: React.FC<{
                       </button>
                     )}
 
-                    {isIOS && (
+                    {!isStandalone && isIOS && (
                       <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
                          <div className="flex gap-4 items-start text-left">
                            <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
@@ -3281,49 +3297,52 @@ const SettingsModal: React.FC<{
                       </div>
                     )}
 
-                    {!isInstallable && !isIOS && !isStandalone && (
-                      <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
-                         <div className="flex gap-4 items-start text-left">
-                           <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
-                             <ExternalLink size={20} />
+                    {!isStandalone && !isInstallable && !isIOS && (
+                      <>
+                        <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
+                           <div className="flex gap-4 items-start text-left">
+                             <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                               <ExternalLink size={20} />
+                             </div>
+                             <div className="flex-1">
+                               <p className="text-[11px] font-black text-blue-800 uppercase leading-none mb-1.5">Dica de Instalação</p>
+                               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
+                                 Acesse este link <b>DIRETAMENTE</b> pelo Chrome ou Samsung Internet. Se estiver vendo isso por dentro do Instagram, WhatsApp ou Facebook, a instalação não aparecerá.
+                               </p>
+                             </div>
                            </div>
-                           <div className="flex-1">
-                             <p className="text-[11px] font-black text-blue-800 uppercase leading-none mb-1.5">Aviso de Instalação</p>
-                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
-                               Certifique-se de estar acessando o link <span className="text-blue-600 font-extrabold">diretamente pelo navegador</span> (Chrome ou Samsung Internet) e não por dentro de outros apps ou visualizadores.
-                             </p>
-                           </div>
-                         </div>
-                      </div>
-                    )}
+                        </div>
 
-                    {!isInstallable && !isIOS && (
-                      <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100">
-                         <div className="flex gap-4 items-start text-left">
-                           <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
-                             <Smartphone size={20} />
+                        <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100">
+                           <div className="flex gap-4 items-start text-left">
+                             <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                               <Smartphone size={20} />
+                             </div>
+                             <div className="flex-1">
+                               <p className="text-[11px] font-black text-amber-800 uppercase leading-none mb-1.5">Instruções para Android/PC</p>
+                               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
+                                 1. Abra o menu do navegador (geralmente <span className="text-amber-600 font-extrabold">3 pontos ou barras</span>).<br/>
+                                 2. Procure por <span className="text-amber-600 font-extrabold">"Instalar Aplicativo"</span> ou <span className="text-amber-600 font-extrabold">"Adicionar à Tela Inicial"</span>.
+                               </p>
+                             </div>
                            </div>
-                           <div className="flex-1">
-                             <p className="text-[11px] font-black text-amber-800 uppercase leading-none mb-1.5">Instruções para Android/PC</p>
-                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
-                               1. Abra o menu do navegador (geralmente <span className="text-amber-600 font-extrabold">3 pontos ou barras</span>).<br/>
-                               2. Procure por <span className="text-amber-600 font-extrabold">"Instalar Aplicativo"</span> ou <span className="text-amber-600 font-extrabold">"Adicionar à Tela Inicial"</span>.
-                             </p>
-                           </div>
-                         </div>
-                      </div>
+                        </div>
+                      </>
                     )}
                   </div>
                </div>
 
                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                    <p className="text-[11px] font-black text-slate-700 uppercase">Pronto para Uso</p>
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center justify-center gap-2 group cursor-pointer hover:bg-white hover:border-blue-200 transition-all" onClick={() => window.location.reload()}>
+                    <RotateCcw size={16} className="text-slate-400 group-hover:text-blue-500 group-hover:rotate-180 transition-all duration-500" />
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Sincronizar</p>
+                      <p className="text-[11px] font-black text-slate-700 uppercase leading-none">Atualizar Tudo</p>
+                    </div>
                   </div>
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center justify-center">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Versão</p>
-                    <p className="text-[11px] font-black text-slate-700 uppercase tracking-tighter">1.2.0 • Build Slate</p>
+                    <p className="text-[11px] font-black text-slate-700 uppercase tracking-tighter text-blue-600 font-sans">v1.2.8 PROD</p>
                   </div>
                </div>
             </div>
