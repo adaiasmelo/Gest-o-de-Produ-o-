@@ -8,10 +8,10 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// Inicialização robusta do Firestore com cache persistente e pooling longo para melhor conectividade
+// Inicialização robusta do Firestore com cache persistente e long polling para melhor conectividade
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-  experimentalForceLongPolling: true
+  experimentalForceLongPolling: true // Re-habilitado para garantir conectividade em ambientes com proxy/firewall restrito
 }, firebaseConfig.firestoreDatabaseId);
 
 // Testar conexão inicial (silencioso no console se ok, erro se falha crítica)
@@ -54,6 +54,12 @@ export interface FirestoreErrorInfo {
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const isOffline = error instanceof Error && (
+    error.message.includes('the client is offline') || 
+    error.message.includes('network-error') ||
+    error.message.includes('Failed to get document because the client is offline')
+  );
+
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -70,6 +76,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   }
+  
+  if (isOffline) {
+    console.warn('PWA Offline:', operationType, path);
+    // Não lança erro se for apenas offline, permite que o Firestore use o cache silenciosamente
+    return;
+  }
+
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }

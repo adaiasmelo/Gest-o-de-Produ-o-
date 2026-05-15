@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   server: {
@@ -13,6 +14,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
@@ -21,7 +23,7 @@ export default defineConfig({
         name: 'Manupackaging - Controle de Produção',
         short_name: 'Manupackaging',
         description: 'Sistema de Gestão Industrial e Controle de Produção',
-        theme_color: '#0f3a44',
+        theme_color: '#1e3a8a',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
@@ -33,21 +35,21 @@ export default defineConfig({
         dir: 'ltr',
         icons: [
           {
-            src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+            src: 'icon.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+            src: 'icon.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any'
           },
           {
-            src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+            src: 'icon.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'maskable'
           }
         ]

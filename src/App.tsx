@@ -5,7 +5,8 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share, ExternalLink
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share, ExternalLink,
+  Home as HomeIcon, WifiOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -96,7 +97,7 @@ export const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'reports' | 'personnel'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'home' | 'dashboard' | 'reports' | 'personnel'>('home');
   const [productionData, setProductionData] = useState<ProductionEntry[]>([]);
   const [dashboardMonth, setDashboardMonth] = useState(() => {
     const now = new Date();
@@ -148,6 +149,7 @@ export const App: React.FC = () => {
   const [loginPass, setLoginPass] = useState('');
   const [confirmLoginPass, setConfirmLoginPass] = useState('');
   const [discoveredUser, setDiscoveredUser] = useState<SystemUser | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExtraMenuOpen, setIsExtraMenuOpen] = useState(false);
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
@@ -234,9 +236,16 @@ export const App: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -1902,13 +1911,24 @@ export const App: React.FC = () => {
 
 
   if (isInitializing) return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-16 h-16 border-4 border-blue-500 border-t-white rounded-full animate-spin"></div>
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+      <div className="w-20 h-20 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mb-8 animate-pulse">
+         <Activity size={40} />
+      </div>
+      <div className="w-16 h-1 border-2 border-blue-500/20 rounded-full overflow-hidden w-48">
+        <div className="h-full bg-blue-500 animate-loading-bar"></div>
+      </div>
+      <p className="mt-6 text-blue-400 font-black text-[10px] uppercase tracking-widest">Carregando Ambiente</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24">
+    <div className={`min-h-screen bg-[#f8fafc] ${isStandalone ? 'pt-safe' : ''} pb-24`}>
+      {!isOnline && (
+        <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-widest py-2 px-4 flex items-center justify-center gap-2 sticky top-0 z-[100] animate-in slide-in-from-top duration-300">
+          <WifiOff size={14} /> Você está offline. Alguns dados podem estar desatualizados.
+        </div>
+      )}
       <header className="bg-white px-4 py-3 md:px-6 md:py-5 flex items-center justify-between sticky top-0 z-40 border-b border-slate-100 no-print">
         <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
           <div className="w-9 h-9 md:w-11 md:h-11 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center text-white shadow-lg overflow-hidden border border-blue-500">
@@ -1936,6 +1956,7 @@ export const App: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 mt-4 md:mt-8 no-print flex flex-col md:flex-row items-center justify-center gap-4">
         <div className="flex p-1 md:p-1.5 bg-slate-200/50 rounded-2xl md:rounded-[1.8rem] w-full max-w-2xl shadow-sm mx-auto">
+          <button onClick={() => setActiveTab('home')} className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2.5 md:px-6 md:py-3.5 rounded-xl md:rounded-[1.4rem] text-[9px] md:text-[11px] font-black uppercase transition-all ${activeTab === 'home' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}><HomeIcon className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]"/> <span className="truncate">Início</span></button>
           {canViewDashboard && (
             <button onClick={() => setActiveTab('dashboard')} className={`flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 py-2.5 md:px-6 md:py-3.5 rounded-xl md:rounded-[1.4rem] text-[9px] md:text-[11px] font-black uppercase transition-all ${activeTab === 'dashboard' ? 'bg-white text-blue-600 shadow-md' : 'text-slate-500'}`}><Activity className="w-3.5 h-3.5 md:w-[18px] md:h-[18px]"/> <span className="truncate">Indicadores</span></button>
           )}
@@ -1949,6 +1970,78 @@ export const App: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto p-6 space-y-8">
+        {activeTab === 'home' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl flex flex-col items-center text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mb-6 relative z-10">
+                   {systemLogo ? <img src={systemLogo} className="w-full h-full object-cover rounded-[2.5rem]" /> : <Activity size={40} />}
+                </div>
+                <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none mb-4">{systemName}</h2>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-relaxed max-w-xs">{loginSystemSubtitle || "Controle de Produção e Gestão Industrial"}</p>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => { setEditingEntry(null); setIsModalOpen(true); }}
+                  className="bg-blue-600 p-6 rounded-[2.5rem] text-white flex flex-col items-center gap-4 shadow-xl shadow-blue-100 active:scale-95 transition-all group"
+                >
+                   <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Plus size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest">Lançar Produção</span>
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
+                >
+                   <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Activity size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Indicadores</span>
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('personnel')}
+                  className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
+                >
+                   <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Users size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gestão Pessoal</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
+                >
+                   <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Settings size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Configurações</span>
+                </button>
+             </div>
+
+             <div className="bg-slate-900 p-8 rounded-[3rem] text-white overflow-hidden relative group">
+                <div className="flex items-center justify-between mb-6">
+                   <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><Smartphone size={20} /></div>
+                      <h3 className="text-sm font-black uppercase tracking-tight">Experiência App</h3>
+                   </div>
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-loose mb-6">
+                   Este sistema foi otimizado para uso como aplicativo. Para uma melhor experiência, adicione-o à sua tela de início.
+                </p>
+                {isStandalone ? (
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase">
+                     <ShieldCheck size={14} /> Modo Aplicativo Ativo
+                  </div>
+                ) : (
+                  <button 
+                    onClick={handleInstallClick}
+                    className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2"
+                  >
+                     <Download size={16} /> Instalar Agora
+                  </button>
+                )}
+             </div>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <div className="bg-[#2563eb] text-white p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col">
@@ -3340,10 +3433,28 @@ const SettingsModal: React.FC<{
                       <p className="text-[11px] font-black text-slate-700 uppercase leading-none">Atualizar Tudo</p>
                     </div>
                   </div>
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center justify-center">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Versão</p>
-                    <p className="text-[11px] font-black text-slate-700 uppercase tracking-tighter text-blue-600 font-sans">v1.2.8 PROD</p>
+                  <div className="bg-red-50 p-5 rounded-2xl border border-red-100 flex flex-col items-center text-center justify-center gap-2 group cursor-pointer hover:bg-red-100 transition-all" onClick={async () => {
+                    if (confirm('Deseja limpar o cache e reiniciar o aplicativo? Isso pode resolver problemas de carregamento.')) {
+                      if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        for (let reg of regs) {
+                          await reg.unregister();
+                        }
+                      }
+                      window.location.reload();
+                    }
+                  }}>
+                    <Trash2 size={16} className="text-red-400" />
+                    <div>
+                      <p className="text-[9px] font-black text-red-400 uppercase tracking-widest mb-0.5">Diagnóstico</p>
+                      <p className="text-[11px] font-black text-red-700 uppercase leading-none">Limpar Cache</p>
+                    </div>
                   </div>
+               </div>
+
+               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center justify-center">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Versão</p>
+                  <p className="text-[11px] font-black text-slate-700 uppercase tracking-tighter text-blue-600 font-sans">v1.2.9 PROD</p>
                </div>
             </div>
           )}
@@ -3587,5 +3698,5 @@ const SettingsModal: React.FC<{
         )}
       </div>
     </div>
-  )
+  );
 };
