@@ -178,6 +178,7 @@ export const App: React.FC = () => {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const personnelRef = useRef<HTMLDivElement>(null);
 
   const activeMachines = useMemo(() => ["Cast 1", "Cast 2", "Erema 1", "Ghezzi", "Lintech", "Wutec"], []);
 
@@ -1706,35 +1707,6 @@ export const App: React.FC = () => {
                     </p>
                   )}
                   
-                  {isInstallable && !isStandalone && (
-                    <div className="mt-6 pt-4 border-t border-slate-100 animate-in fade-in zoom-in duration-700">
-                      <button 
-                        onClick={handleInstallClick}
-                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-emerald-100"
-                      >
-                        <Download size={18} />
-                        <div className="text-left">
-                          <p className="text-[11px] font-black uppercase leading-none">Baixar Aplicativo</p>
-                          <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Instalação Avançada PWA</p>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-
-                  {isIOS && !isStandalone && (
-                    <div className="mt-6 pt-4 border-t border-slate-100 p-4 bg-blue-50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
-                       <div className="flex gap-3 items-start">
-                         <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0">
-                           <Share size={16} />
-                         </div>
-                         <div>
-                           <p className="text-[10px] font-black text-slate-800 uppercase leading-none mb-1">Instalar no iPhone (iOS)</p>
-                           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Clique no botão "Compartilhar" e depois em "Adicionar à Tela de Início".</p>
-                         </div>
-                       </div>
-                    </div>
-                  )}
-                  
                   {!discoveredUser && loginMatricula.length < 3 && (
                     <div className="mt-4 space-y-3 animate-in fade-in duration-500">
                       <div className="flex gap-3">
@@ -1766,6 +1738,35 @@ export const App: React.FC = () => {
                           <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Seus dados estão protegidos por criptografia de ponta a ponta.</p>
                         </div>
                       </div>
+
+                      {isInstallable && !isStandalone && (
+                        <div className="mt-6 animate-in fade-in zoom-in duration-700">
+                          <button 
+                            onClick={handleInstallClick}
+                            className="w-full py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-emerald-100 border-2 border-white/20"
+                          >
+                            <Download size={20} className="animate-bounce" />
+                            <div className="text-left font-sans">
+                              <p className="text-[12px] font-black uppercase leading-none">Baixar Aplicativo</p>
+                              <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Instalação Avançada PWA</p>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+
+                      {isIOS && !isStandalone && (
+                        <div className="mt-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
+                           <div className="flex gap-3 items-start">
+                             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0">
+                               <Share size={16} />
+                             </div>
+                             <div>
+                               <p className="text-[10px] font-black text-slate-800 uppercase leading-none mb-1">Instalar no iPhone (iOS)</p>
+                               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-tight">Clique no botão "Compartilhar" (quadrado com seta) e escolha "Adicionar à Tela de Início".</p>
+                             </div>
+                           </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1839,6 +1840,7 @@ export const App: React.FC = () => {
 
             <div className={`mt-2 pt-4 border-t border-slate-100 flex flex-col gap-2 items-center ${!discoveredUser && loginMatricula.length < 3 ? 'mt-1' : ''}`}>
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">Criado por Adaias Melo</p>
+              <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter opacity-50">Versão PWA 1.2.0 • Build Clean Slate</p>
             </div>
         </div>
 

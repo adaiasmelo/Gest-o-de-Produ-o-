@@ -23,6 +23,18 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // 7MB limit
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          {
+            urlPattern: /^https:\/\/identitytoolkit\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          {
+            urlPattern: /^https:\/\/securetoken\.googleapis\.com\/.*/i,
+            handler: 'NetworkOnly'
+          },
+          {
             urlPattern: /^https:\/\/static\.wixstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {

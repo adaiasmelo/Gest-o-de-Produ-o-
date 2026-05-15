@@ -1,10 +1,30 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, getDocs, deleteDoc } from 'firebase/firestore';
+import { 
+  initializeFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, getDocs, deleteDoc,
+  persistentLocalCache, persistentMultipleTabManager, getDocFromServer
+} from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Inicialização robusta do Firestore com cache persistente e pooling longo para melhor conectividade
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  experimentalForceLongPolling: true
+}, firebaseConfig.firestoreDatabaseId);
+
+// Testar conexão inicial (silencioso no console se ok, erro se falha crítica)
+const testConnection = async () => {
+  try {
+    await getDocFromServer(doc(db, 'settings', 'global'));
+    console.log('PWA: Firestore conectado com sucesso');
+  } catch (error) {
+    console.warn('PWA: Firestore operando em modo offline ou conexão pendente');
+  }
+};
+testConnection();
+
 export const auth = getAuth();
 
 export enum OperationType {
