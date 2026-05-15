@@ -6,7 +6,7 @@ import {
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
   UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share, ExternalLink,
-  Home as HomeIcon, WifiOff
+  Home as HomeIcon, WifiOff, Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -93,6 +93,7 @@ export const App: React.FC = () => {
   const [loginSystemName, setLoginSystemName] = useState('CONTROLE DE PRODUÇÃO');
   const [loginSystemSubtitle, setLoginSystemSubtitle] = useState('');
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
+  const [systemCoverImage, setSystemCoverImage] = useState<string | null>(null);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -368,6 +369,7 @@ export const App: React.FC = () => {
         if (data.loginSystemName) setLoginSystemName(data.loginSystemName);
         if (data.loginSystemSubtitle) setLoginSystemSubtitle(data.loginSystemSubtitle);
         if (data.systemLogo) setSystemLogo(data.systemLogo);
+        if (data.systemCoverImage) setSystemCoverImage(data.systemCoverImage);
       }
       setSettingsLoaded(true);
     }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/global'));
@@ -665,6 +667,7 @@ export const App: React.FC = () => {
         loginSystemName,
         loginSystemSubtitle,
         systemLogo,
+        systemCoverImage,
         lastUpdated: new Date().toISOString()
       });
       alert('Configurações salvas com sucesso!');
@@ -1972,14 +1975,13 @@ export const App: React.FC = () => {
       <main className="max-w-7xl mx-auto p-6 space-y-8">
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-                <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl mb-6 relative z-10">
-                   {systemLogo ? <img src={systemLogo} className="w-full h-full object-cover rounded-[2.5rem]" /> : <Activity size={40} />}
+             {systemCoverImage && (
+                <div className="w-full h-48 md:h-64 rounded-[3rem] overflow-hidden border border-slate-100 shadow-xl animate-in zoom-in-95 duration-500">
+                   <img src={systemCoverImage} alt="Imagem de Capa" className="w-full h-full object-cover" />
                 </div>
-                <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none mb-4">{systemName}</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-relaxed max-w-xs">{loginSystemSubtitle || "Controle de Produção e Gestão Industrial"}</p>
-             </div>
+             )}
+
+
 
              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <button 
@@ -2752,6 +2754,8 @@ export const App: React.FC = () => {
         setLoginSystemSubtitle={setLoginSystemSubtitle}
         systemLogo={systemLogo}
         setSystemLogo={setSystemLogo}
+        systemCoverImage={systemCoverImage}
+        setSystemCoverImage={setSystemCoverImage}
         isAdminUser={loggedUser.registration === '1010' || loggedUser.role === 'Administrador'}
         isInstallable={isInstallable}
         isStandalone={isStandalone}
@@ -3275,6 +3279,8 @@ const SettingsModal: React.FC<{
   setLoginSystemSubtitle: (text: string) => void;
   systemLogo: string | null;
   setSystemLogo: (logo: string | null) => void;
+  systemCoverImage: string | null;
+  setSystemCoverImage: (image: string | null) => void;
   isAdminUser: boolean;
   isInstallable: boolean;
   isStandalone: boolean;
@@ -3286,7 +3292,7 @@ const SettingsModal: React.FC<{
   operators, goals, setGoals,
   setIsUserManagementOpen, setIsOperatorModalOpen, setIsRoleModalOpen, setIsShiftModalOpen,
   downloadBackup, handleRestoreData, isInitializing, fileInputRef,
-  systemName, setSystemName, loginSystemName, setLoginSystemName, loginSystemSubtitle, setLoginSystemSubtitle, systemLogo, setSystemLogo, 
+  systemName, setSystemName, loginSystemName, setLoginSystemName, loginSystemSubtitle, setLoginSystemSubtitle, systemLogo, setSystemLogo, systemCoverImage, setSystemCoverImage, 
   isAdminUser, isInstallable, isStandalone, isIOS, handleInstallClick
 }) => {
   if (!isOpen) return null;
@@ -3603,6 +3609,38 @@ const SettingsModal: React.FC<{
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed italic">Clique na imagem ao lado para carregar um novo arquivo do seu dispositivo.</p>
                       <div className="flex gap-2">
                          <button onClick={() => setSystemLogo(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover Logo</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex items-center gap-6">
+                  <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center border border-slate-200 overflow-hidden shadow-sm relative group">
+                    {systemCoverImage ? (
+                      <img src={systemCoverImage} alt="Capa Prev" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                        <ImageIcon size={32} />
+                      </div>
+                    )}
+                    <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-pointer">
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest text-center px-2">Alterar Capa</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => setSystemCoverImage(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Imagem de Capa (Home)</p>
+                    <div className="space-y-3">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed italic">Esta imagem será exibida na tela inicial do sistema em toda sua extensão.</p>
+                      <div className="flex gap-2">
+                         <button onClick={() => setSystemCoverImage(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover Capa</button>
                       </div>
                     </div>
                   </div>
