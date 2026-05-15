@@ -18,6 +18,7 @@ import { db, auth, OperationType, handleFirestoreError, seedInitialData } from '
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions, TrainingRecord, TrainingTemplate } from './types';
+import PdfChoiceModal from './components/PdfChoiceModal';
 import { INITIAL_DATA, GOAL_VALUE, DEFAULT_OPERATORS, INITIAL_EMPLOYEES, INITIAL_LOGS } from './constants';
 import { isBiometricAvailable, registerBiometrics, authenticateBiometrics } from './services/biometricService';
 import LaunchModal from './components/LaunchModal';
@@ -148,6 +149,12 @@ export const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loginMatricula, setLoginMatricula] = useState('');
   const [loginPass, setLoginPass] = useState('');
+  const [pdfModal, setPdfModal] = useState<{
+    isOpen: boolean;
+    doc: any;
+    filename: string;
+    title: string;
+  }>({ isOpen: false, doc: null, filename: '', title: '' });
   const [confirmLoginPass, setConfirmLoginPass] = useState('');
   const [discoveredUser, setDiscoveredUser] = useState<SystemUser | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -1266,7 +1273,12 @@ export const App: React.FC = () => {
         doc.text(`Página ${i} de ${pageCount} — Manu Packaging Indústria`, 200, 285, { align: 'right' });
     }
 
-    doc.save(`Quadro_Pessoal_Planilha_${now.replace(/\//g, '-')}.pdf`);
+    setPdfModal({
+      isOpen: true,
+      doc,
+      filename: `Quadro_Pessoal_Planilha_${now.replace(/\//g, '-')}.pdf`,
+      title: `Espelho de Quadro — Gerado em: ${nowFull}`
+    });
   };
 
   const handleSaveTraining = async (data: Partial<TrainingRecord>) => {
@@ -1486,7 +1498,12 @@ export const App: React.FC = () => {
 
     // Final Footer
     drawFooter();
-    doc.save(`Ficha_Treinamento_${training.date}.pdf`);
+    setPdfModal({
+      isOpen: true,
+      doc,
+      filename: `Ficha_Treinamento_${training.date}.pdf`,
+      title: `Ficha de Treinamento — ${training.training}`
+    });
   };
 
   const findEmployee = (s: string, m: string, sh: string, r: string) => 
@@ -1873,7 +1890,7 @@ export const App: React.FC = () => {
               <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter opacity-50">Versão PWA 1.2.0 • Build Clean Slate</p>
             </div>
         </div>
-
+ 
         {/* Biometric Registration Prompt Modal */}
         {showBiometricPrompt && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -3057,6 +3074,24 @@ export const App: React.FC = () => {
         onConfirm={confirmDialog.onConfirm}
         onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
         type={confirmDialog.type}
+      />
+
+      <PdfChoiceModal
+        isOpen={pdfModal.isOpen}
+        title={pdfModal.title}
+        onClose={() => setPdfModal(prev => ({ ...prev, isOpen: false }))}
+        onDownload={() => {
+          if (pdfModal.doc) {
+            pdfModal.doc.save(pdfModal.filename);
+          }
+        }}
+        onView={() => {
+          if (pdfModal.doc) {
+            const blob = pdfModal.doc.output('blob');
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+          }
+        }}
       />
     </div>
   );
