@@ -98,46 +98,49 @@ const DatabaseModal: React.FC<DatabaseModalProps> = ({
       <div className="bg-white rounded-[2.5rem] w-full max-w-6xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
         
         {/* Header */}
-        <div className="bg-slate-900 text-white px-8 py-6 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/30">
-                <Database size={24} />
+        <div className="bg-slate-900 text-white px-4 md:px-8 py-4 md:py-6 flex flex-col md:flex-row items-center justify-between border-b border-slate-800 gap-4 shrink-0">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 w-full md:w-auto">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/20 rounded-xl md:rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/30 shrink-0">
+                <Database size={20} />
               </div>
-              <div>
-                <h2 className="text-xl font-black tracking-tight uppercase">Base de Dados</h2>
-                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em]">Gestão de Pessoal</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base md:text-xl font-black tracking-tight uppercase truncate">Base de Dados</h2>
+                <p className="text-[9px] md:text-[10px] text-emerald-400 font-bold uppercase tracking-widest md:tracking-[0.2em]">Gestão de Pessoal</p>
               </div>
+              <button onClick={onClose} className="md:hidden bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 p-2.5 rounded-xl transition-all border border-slate-700 shrink-0">
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="flex bg-slate-800 p-1 rounded-xl ml-8">
+            <div className="flex bg-slate-800 p-1 rounded-xl w-full md:w-auto overflow-x-auto no-scrollbar">
               <button 
                 onClick={() => { setActiveTab('allocations'); setSearchTerm(''); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'allocations' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'allocations' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-400 hover:text-white'}`}
               >
-                Alocações de Pessoal
+                Alocações
               </button>
               <button 
                 onClick={() => { setActiveTab('collaborators'); setSearchTerm(''); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'collaborators' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-400 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-3 md:px-4 py-2 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'collaborators' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-900/40' : 'text-slate-400 hover:text-white'}`}
               >
-                Base Central (Global)
+                Cadastro Global
               </button>
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={18} />
+          <div className="flex items-center gap-3 md:gap-6 w-full md:w-auto">
+            <div className="relative group flex-1 md:flex-none">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={16} />
               <input 
                 type="text" 
-                placeholder={activeTab === 'allocations' ? "Pesquisar alocação..." : "Pesquisar colaborador..."}
+                placeholder="Pesquisar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-slate-800 border-none text-white pl-12 pr-6 py-3 rounded-2xl text-xs font-bold focus:ring-2 focus:ring-emerald-500/50 w-64 transition-all"
+                className="bg-slate-800 border-none text-white pl-10 md:pl-12 pr-4 md:pr-6 py-2.5 md:py-3 rounded-xl md:rounded-2xl text-xs font-bold focus:ring-2 focus:ring-emerald-500/50 w-full md:w-64 transition-all outline-none"
               />
             </div>
-            <button onClick={onClose} className="bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 p-3 rounded-2xl transition-all border border-slate-700">
+            <button onClick={onClose} className="hidden md:block bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 p-3 rounded-2xl transition-all border border-slate-700 shrink-0">
               <X size={20} />
             </button>
           </div>

@@ -161,44 +161,52 @@ const TrainingModal: React.FC<TrainingModalProps> = ({ isOpen, onClose, onSave, 
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
-              <FileText size={24} />
+      <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] w-full max-w-4xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-4 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center bg-slate-50/50 shrink-0 gap-4">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-600 text-white rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100 shrink-0">
+              <FileText size={20} />
             </div>
-            <div>
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Treinamento / DDP</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Gestão de Fichas e Arquivos</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg md:text-xl font-black text-slate-800 uppercase tracking-tight truncate">Treinamento / DDP</h3>
+              <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Gestão de Fichas e Arquivos</p>
             </div>
+            {/* Mobile close button */}
+            <button onClick={onClose} className="md:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-600 shrink-0">
+              <X size={24} />
+            </button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-between md:justify-end">
             <button 
               onClick={onEditTemplate}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-slate-100"
+              className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-slate-800 text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow-lg shadow-slate-100 flex-1 md:flex-none"
               title="Personalizar Modelo do PDF"
             >
-              <Layout size={16} />
-              Editar Modelo
+              <Layout size={14} className="md:size-4" />
+              <span className="hidden sm:inline">Editar Modelo</span>
+              <span className="sm:hidden">Modelo</span>
             </button>
             {view === 'history' ? (
               <button 
                 onClick={() => { setView('form'); resetForm(); }}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                className="flex items-center justify-center gap-2 px-3 md:px-6 py-2 md:py-2.5 bg-blue-600 text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex-1 md:flex-none"
               >
-                <Plus size={16} />
-                Nova Ficha
+                <Plus size={14} className="md:size-4" />
+                <span className="hidden sm:inline">Nova Ficha</span>
+                <span className="sm:hidden">Novo</span>
               </button>
             ) : (
               <button 
                 onClick={() => setView('history')}
-                className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                className="flex items-center justify-center gap-2 px-3 md:px-6 py-2 md:py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all flex-1 md:flex-none"
               >
-                <History size={16} />
-                Ver Histórico
+                <History size={14} className="md:size-4" />
+                <span className="hidden sm:inline">Ver Histórico</span>
+                <span className="sm:hidden">Voltar</span>
               </button>
             )}
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-600">
+            {/* Desktop close button */}
+            <button onClick={onClose} className="hidden md:block p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-600">
               <X size={24} />
             </button>
           </div>
