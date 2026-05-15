@@ -9,8 +9,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      base: '/',
-      manifestFilename: 'manifest.json',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       devOptions: {
         enabled: true,
         type: 'module'
@@ -20,7 +19,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        maximumFileSizeToCacheInBytes: 7 * 1024 * 1024, // 7MB limit
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
@@ -40,8 +39,8 @@ export default defineConfig({
             options: {
               cacheName: 'wix-assets-cache',
               expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -57,9 +56,10 @@ export default defineConfig({
         theme_color: '#0f3a44',
         background_color: '#ffffff',
         display: 'standalone',
+        orientation: 'portrait',
         scope: '/',
-        start_url: '/?standalone=true',
-        id: '/?standalone=true',
+        start_url: '/',
+        id: '/',
         icons: [
           {
             src: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',

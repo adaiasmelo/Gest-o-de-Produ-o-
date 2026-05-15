@@ -208,7 +208,8 @@ export const App: React.FC = () => {
     isBiometricAvailable().then(setBiometricSupported);
 
     // Detectar iOS e se é standalone
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /ipad|iphone|ipod/.test(userAgent) && !(window as any).MSStream;
     const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true || window.location.search.includes('standalone=true');
     
     setIsIOS(isIOSDevice);
@@ -1770,6 +1771,20 @@ export const App: React.FC = () => {
                            </div>
                         </div>
                       )}
+
+                      {!isInstallable && !isIOS && !isStandalone && (
+                         <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                           <div className="flex gap-3 items-start text-left">
+                             <div className="w-8 h-8 bg-amber-500 text-white rounded-lg flex items-center justify-center shrink-0 shadow-md">
+                               <Smartphone size={16} />
+                             </div>
+                             <div className="flex-1">
+                               <p className="text-[10px] font-black text-amber-800 uppercase leading-none mb-1">Instalar no Android/PC</p>
+                               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-tight italic">No menu do navegador, selecione "Instalar Aplicativo" ou "Adicionar à Tela Inicial".</p>
+                             </div>
+                           </div>
+                         </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -3259,17 +3274,27 @@ const SettingsModal: React.FC<{
                              <p className="text-[11px] font-black text-slate-800 uppercase leading-none mb-1.5">Instruções para iPhone</p>
                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed">
                                1. Toque no botão <span className="text-blue-600 font-extrabold">"Compartilhar"</span> (ícone quadrado com seta).<br/>
-                               2. Role para baixo e selecione <span className="text-blue-600 font-extrabold">"Adicionar à Tela de Início"</span>.
+                               2. Selecione <span className="text-blue-600 font-extrabold">"Adicionar à Tela de Início"</span>.
                              </p>
                            </div>
                          </div>
                       </div>
                     )}
 
-                    {(!isInstallable && !isIOS) && (
-                      <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 text-center">
-                        <p className="text-[11px] font-black text-amber-700 uppercase leading-relaxed mb-2">Instalação Indisponível</p>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase leading-tight italic">Seu navegador já está rodando o app ou não suporta instalação automática.</p>
+                    {!isInstallable && !isIOS && (
+                      <div className="p-5 bg-amber-50 rounded-2xl border border-amber-100">
+                         <div className="flex gap-4 items-start text-left">
+                           <div className="w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                             <Smartphone size={20} />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-[11px] font-black text-amber-800 uppercase leading-none mb-1.5">Instruções para Android/PC</p>
+                             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-tight leading-relaxed">
+                               1. Abra o menu do navegador (geralmente <span className="text-amber-600 font-extrabold">3 pontos ou barras</span>).<br/>
+                               2. Procure por <span className="text-amber-600 font-extrabold">"Instalar Aplicativo"</span> ou <span className="text-amber-600 font-extrabold">"Adicionar à Tela Inicial"</span>.
+                             </p>
+                           </div>
+                         </div>
                       </div>
                     )}
                   </div>
@@ -3419,17 +3444,11 @@ const SettingsModal: React.FC<{
                     </label>
                   </div>
                   <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Personalização Visual</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Logotipo do Sistema</p>
                     <div className="space-y-3">
-                      <input 
-                        type="url" 
-                        value={systemLogo?.startsWith('data:') ? '' : (systemLogo || '')} 
-                        onChange={e => setSystemLogo(e.target.value)}
-                        placeholder="Link da imagem (URL)..."
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-[11px] font-bold outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder:text-slate-300"
-                      />
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed italic">Clique na imagem ao lado para carregar um novo arquivo do seu dispositivo.</p>
                       <div className="flex gap-2">
-                         <button onClick={() => setSystemLogo(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover</button>
+                         <button onClick={() => setSystemLogo(null)} className="px-4 py-2 bg-white border border-slate-200 text-[10px] font-black uppercase text-red-500 rounded-xl hover:bg-red-50 transition-all">Remover Logo</button>
                       </div>
                     </div>
                   </div>
