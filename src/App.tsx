@@ -116,7 +116,7 @@ export const App: React.FC = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'filters' | 'goals' | 'config' | 'system'>('filters');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'filters' | 'goals' | 'config' | 'system' | 'app'>('filters');
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false);
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null);
@@ -2637,6 +2637,10 @@ export const App: React.FC = () => {
         systemLogo={systemLogo}
         setSystemLogo={setSystemLogo}
         isAdminUser={loggedUser.registration === '1010' || loggedUser.role === 'Administrador'}
+        isInstallable={isInstallable}
+        isStandalone={isStandalone}
+        isIOS={isIOS}
+        handleInstallClick={handleInstallClick}
       />
 
       <input type="file" ref={fileInputRef} onChange={(e) => {
@@ -3128,8 +3132,8 @@ const SettingsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   onSave: () => Promise<void>;
-  activeTab: 'filters' | 'goals' | 'config' | 'system';
-  setActiveTab: (tab: 'filters' | 'goals' | 'config' | 'system') => void;
+  activeTab: 'filters' | 'goals' | 'config' | 'system' | 'app';
+  setActiveTab: (tab: 'filters' | 'goals' | 'config' | 'system' | 'app') => void;
   filterOperator: string;
   setFilterOperator: (op: string) => void;
   filterDay: string;
@@ -3156,13 +3160,18 @@ const SettingsModal: React.FC<{
   systemLogo: string | null;
   setSystemLogo: (logo: string | null) => void;
   isAdminUser: boolean;
+  isInstallable: boolean;
+  isStandalone: boolean;
+  isIOS: boolean;
+  handleInstallClick: () => void;
 }> = ({
   isOpen, onClose, onSave, activeTab, setActiveTab,
   filterOperator, setFilterOperator, filterDay, setFilterDay, dashboardMonth, setDashboardMonth,
   operators, goals, setGoals,
   setIsUserManagementOpen, setIsOperatorModalOpen, setIsRoleModalOpen, setIsShiftModalOpen,
   downloadBackup, handleRestoreData, isInitializing, fileInputRef,
-  systemName, setSystemName, loginSystemName, setLoginSystemName, loginSystemSubtitle, setLoginSystemSubtitle, systemLogo, setSystemLogo, isAdminUser
+  systemName, setSystemName, loginSystemName, setLoginSystemName, loginSystemSubtitle, setLoginSystemSubtitle, systemLogo, setSystemLogo, 
+  isAdminUser, isInstallable, isStandalone, isIOS, handleInstallClick
 }) => {
   if (!isOpen) return null;
 
@@ -3179,39 +3188,106 @@ const SettingsModal: React.FC<{
     { id: 'goals', label: 'Metas', icon: Target, hidden: !isAdminUser },
     { id: 'config', label: 'Cadastro', icon: Settings, hidden: !isAdminUser },
     { id: 'system', label: 'Sistema', icon: Cpu, hidden: !isAdminUser },
+    { id: 'app', label: 'App', icon: Smartphone, hidden: isStandalone },
   ].filter(t => !t.hidden);
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}>
-      <div className="bg-white rounded-[3rem] w-full max-w-2xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="px-8 pt-8 pb-6 border-b border-slate-100 flex justify-between items-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 md:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose}>
+      <div className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-2xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div className="px-6 md:px-8 pt-6 md:pt-8 pb-4 md:pb-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
           <div>
-            <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Configurações</h3>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gerencie as preferências do sistema</p>
+            <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight">Configurações</h3>
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-0.5">Gerencie as preferências</p>
           </div>
-          <button onClick={onClose} className="p-2.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-2xl transition-all">
-            <X size={28} />
+          <button onClick={onClose} className="p-3 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-2xl transition-all active:scale-90">
+            <X size={24} className="md:w-7 md:h-7" />
           </button>
         </div>
 
-        <div className="flex bg-slate-50 border-b border-slate-100 p-2 overflow-x-auto no-scrollbar scroll-smooth">
-          <div className="flex gap-2 min-w-max md:min-w-0 md:flex-1 md:justify-center">
+        <div className="flex bg-slate-50 border-b border-slate-100 p-2 overflow-x-auto no-scrollbar scroll-smooth shrink-0">
+          <div className="flex gap-1.5 md:gap-2 min-w-max md:min-w-0 md:flex-1 md:justify-center px-1">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center justify-center gap-2.5 px-4 md:px-6 py-3 rounded-2xl text-[10px] md:text-[11px] font-black uppercase transition-all whitespace-nowrap ${
+                className={`flex items-center justify-center gap-2.5 px-4 md:px-6 py-3.5 rounded-2xl text-[10px] md:text-[11px] font-black uppercase transition-all whitespace-nowrap ${
                   activeTab === tab.id ? 'bg-white text-blue-600 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                <tab.icon size={16} />
+                <tab.icon size={16} className="md:w-[18px] md:h-[18px]" />
                 {tab.label}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="p-6 md:p-10 max-h-[70vh] md:max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <div className="p-6 md:p-10 flex-1 overflow-y-auto custom-scrollbar">
+          {activeTab === 'app' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+               <div className="bg-emerald-50 p-6 md:p-8 rounded-[2rem] border border-emerald-100">
+                  <div className="flex flex-col items-center text-center gap-4">
+                    <div className="w-16 h-16 bg-white rounded-3xl shadow-lg flex items-center justify-center text-emerald-600">
+                      <Smartphone size={32} />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-black text-slate-800 uppercase">Versão para Celular</h4>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-1">Transforme este site em um aplicativo completo</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 space-y-4">
+                    {isInstallable && (
+                      <button 
+                        onClick={handleInstallClick}
+                        className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-emerald-100 border-2 border-white/20"
+                      >
+                        <Download size={22} className="animate-bounce" />
+                        <div className="text-left font-sans text-white">
+                          <p className="text-[13px] font-black uppercase leading-none">Instalar Aplicativo</p>
+                          <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Download Direto PWA</p>
+                        </div>
+                      </button>
+                    )}
+
+                    {isIOS && (
+                      <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100">
+                         <div className="flex gap-4 items-start text-left">
+                           <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                             <Share size={20} />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-[11px] font-black text-slate-800 uppercase leading-none mb-1.5">Instruções para iPhone</p>
+                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight leading-relaxed">
+                               1. Toque no botão <span className="text-blue-600 font-extrabold">"Compartilhar"</span> (ícone quadrado com seta).<br/>
+                               2. Role para baixo e selecione <span className="text-blue-600 font-extrabold">"Adicionar à Tela de Início"</span>.
+                             </p>
+                           </div>
+                         </div>
+                      </div>
+                    )}
+
+                    {(!isInstallable && !isIOS) && (
+                      <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 text-center">
+                        <p className="text-[11px] font-black text-amber-700 uppercase leading-relaxed mb-2">Instalação Indisponível</p>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase leading-tight italic">Seu navegador já está rodando o app ou não suporta instalação automática.</p>
+                      </div>
+                    )}
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                    <p className="text-[11px] font-black text-slate-700 uppercase">Pronto para Uso</p>
+                  </div>
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Versão</p>
+                    <p className="text-[11px] font-black text-slate-700 uppercase tracking-tighter">1.2.0 • Build Slate</p>
+                  </div>
+               </div>
+            </div>
+          )}
+
           {activeTab === 'filters' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
