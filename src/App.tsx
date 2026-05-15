@@ -153,6 +153,8 @@ export const App: React.FC = () => {
   const [employeeDetailData, setEmployeeDetailData] = useState<any>(null);
   
   const [biometricSupported, setBiometricSupported] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricUser, setBiometricUser] = useState<SystemUser | null>(null);
   const [notifications, setNotifications] = useState<{ id: string, message: string, type: 'success' | 'info', operator: string }[]>([]);
@@ -189,8 +191,37 @@ export const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
+
   useEffect(() => {
     isBiometricAvailable().then(setBiometricSupported);
+
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   useEffect(() => {
@@ -1691,6 +1722,23 @@ export const App: React.FC = () => {
                           <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Seus dados estão protegidos por criptografia de ponta a ponta.</p>
                         </div>
                       </div>
+
+                      {isInstallable && (
+                        <div className="pt-2 animate-in fade-in zoom-in duration-700">
+                          <button 
+                            onClick={handleInstallClick}
+                            className="w-full py-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl flex items-center justify-center gap-3 group hover:bg-emerald-100 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
+                          >
+                            <div className="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover:rotate-12 transition-transform">
+                              <Download size={16} />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-[10px] font-black uppercase leading-none">Baixar Aplicativo</p>
+                              <p className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">Instalação Avançada PWA</p>
+                            </div>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
