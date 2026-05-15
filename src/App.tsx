@@ -1739,30 +1739,33 @@ export const App: React.FC = () => {
                         </div>
                       </div>
 
+                    </div>
+                  )}
+
+                  {((isInstallable && !isStandalone) || (isIOS && !isStandalone)) && (
+                    <div className="mt-4 space-y-3 animate-in fade-in duration-700">
                       {isInstallable && !isStandalone && (
-                        <div className="mt-6 animate-in fade-in zoom-in duration-700">
-                          <button 
-                            onClick={handleInstallClick}
-                            className="w-full py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-emerald-100 border-2 border-white/20"
-                          >
-                            <Download size={20} className="animate-bounce" />
-                            <div className="text-left font-sans">
-                              <p className="text-[12px] font-black uppercase leading-none">Baixar Aplicativo</p>
-                              <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Instalação Avançada PWA</p>
-                            </div>
-                          </button>
-                        </div>
+                        <button 
+                          onClick={handleInstallClick}
+                          className="w-full py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-emerald-100 border-2 border-white/20"
+                        >
+                          <Download size={20} className="animate-bounce" />
+                          <div className="text-left font-sans text-white">
+                            <p className="text-[12px] font-black uppercase leading-none">Baixar Aplicativo</p>
+                            <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Instalação Avançada PWA</p>
+                          </div>
+                        </button>
                       )}
 
                       {isIOS && !isStandalone && (
-                        <div className="mt-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
-                           <div className="flex gap-3 items-start">
-                             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0">
+                        <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                           <div className="flex gap-3 items-start text-left">
+                             <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0 shadow-md">
                                <Share size={16} />
                              </div>
-                             <div>
+                             <div className="flex-1">
                                <p className="text-[10px] font-black text-slate-800 uppercase leading-none mb-1">Instalar no iPhone (iOS)</p>
-                               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-tight">Clique no botão "Compartilhar" (quadrado com seta) e escolha "Adicionar à Tela de Início".</p>
+                               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter leading-tight">Clique no botão <span className="text-blue-600 font-black">"Compartilhar"</span> e selecione <span className="text-blue-600 font-black">"Adicionar à Tela de Início"</span>.</p>
                              </div>
                            </div>
                         </div>
@@ -1910,9 +1913,9 @@ export const App: React.FC = () => {
             <button onClick={() => { setEditingEntry(null); setIsModalOpen(true); }} className="bg-blue-600 text-white p-2.5 md:p-3.5 rounded-xl md:rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 transition-all"><Plus size={18} className="md:w-[22px] md:h-[22px]" /></button>
           )}
           {canManageSettings && (
-            <button onClick={() => setIsSettingsModalOpen(true)} className="p-2.5 md:p-3.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl transition-all shadow-sm active:scale-95"><Settings size={18} className="md:w-[22px] md:h-[22px]" /></button>
+            <button onClick={() => setIsSettingsModalOpen(true)} className="p-3 md:p-3.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-xl md:rounded-2xl transition-all shadow-sm active:scale-95" title="Configurações"><Settings size={20} className="md:w-[22px] md:h-[22px]" /></button>
           )}
-          <button onClick={handleLogout} className="p-2.5 md:p-3.5 text-red-600 bg-red-50 border border-red-100 rounded-xl md:rounded-2xl transition-all shadow-sm active:scale-95" title="Sair do Sistema"><LogOut size={18} className="md:w-[22px] md:h-[22px]" /></button>
+          <button onClick={handleLogout} className="p-3 md:p-3.5 text-red-600 bg-red-50 border border-red-100 rounded-xl md:rounded-2xl transition-all shadow-sm active:scale-95" title="Sair do Sistema"><LogOut size={20} className="md:w-[22px] md:h-[22px]" /></button>
         </div>
       </header>
 
@@ -2633,7 +2636,7 @@ export const App: React.FC = () => {
         setLoginSystemSubtitle={setLoginSystemSubtitle}
         systemLogo={systemLogo}
         setSystemLogo={setSystemLogo}
-        isAdminUser={loggedUser.registration === '1010'}
+        isAdminUser={loggedUser.registration === '1010' || loggedUser.role === 'Administrador'}
       />
 
       <input type="file" ref={fileInputRef} onChange={(e) => {
@@ -3191,22 +3194,24 @@ const SettingsModal: React.FC<{
           </button>
         </div>
 
-        <div className="flex bg-slate-50 border-b border-slate-100 p-2 overflow-x-auto no-scrollbar">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 min-w-[120px] flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-2xl text-[11px] font-black uppercase transition-all ${
-                activeTab === tab.id ? 'bg-white text-blue-600 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex bg-slate-50 border-b border-slate-100 p-2 overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="flex gap-2 min-w-max md:min-w-0 md:flex-1 md:justify-center">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center justify-center gap-2.5 px-4 md:px-6 py-3 rounded-2xl text-[10px] md:text-[11px] font-black uppercase transition-all whitespace-nowrap ${
+                  activeTab === tab.id ? 'bg-white text-blue-600 shadow-md ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <tab.icon size={16} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="p-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <div className="p-6 md:p-10 max-h-[70vh] md:max-h-[60vh] overflow-y-auto custom-scrollbar">
           {activeTab === 'filters' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
