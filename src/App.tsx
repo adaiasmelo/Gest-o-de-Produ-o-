@@ -5,7 +5,7 @@ import {
   Plus, Settings, Cpu, ShieldCheck, Target, TrendingUp, Clock, FileDown, 
   Users, HardHat, Factory, Briefcase, History, RotateCcw, X, Edit2, Trash2, 
   LogOut, Search, Activity, Package, ChevronRight, TrendingDown, Upload, Info,
-  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2
+  UserPlus, Download, AlertCircle, FileSpreadsheet, Scale, FileText, Menu, Fingerprint, Smartphone, Bell, Volume2, Share
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -155,6 +155,8 @@ export const App: React.FC = () => {
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [biometricUser, setBiometricUser] = useState<SystemUser | null>(null);
   const [notifications, setNotifications] = useState<{ id: string, message: string, type: 'success' | 'info', operator: string }[]>([]);
@@ -204,7 +206,15 @@ export const App: React.FC = () => {
   useEffect(() => {
     isBiometricAvailable().then(setBiometricSupported);
 
+    // Detectar iOS e se é standalone
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    
+    setIsIOS(isIOSDevice);
+    setIsStandalone(checkStandalone);
+
     const handleBeforeInstall = (e: any) => {
+      console.log('beforeinstallprompt fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
@@ -213,6 +223,7 @@ export const App: React.FC = () => {
     const handleAppInstalled = () => {
       setIsInstallable(false);
       setDeferredPrompt(null);
+      setIsStandalone(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -1685,10 +1696,40 @@ export const App: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  
                   {discoveredUser && (
                     <p className="mt-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1">
                       <ShieldCheck size={12} /> {discoveredUser.name.split(' ')[0]} Identificado
                     </p>
+                  )}
+                  
+                  {isInstallable && !isStandalone && (
+                    <div className="mt-6 pt-4 border-t border-slate-100 animate-in fade-in zoom-in duration-700">
+                      <button 
+                        onClick={handleInstallClick}
+                        className="w-full py-4 bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-emerald-100"
+                      >
+                        <Download size={18} />
+                        <div className="text-left">
+                          <p className="text-[11px] font-black uppercase leading-none">Baixar Aplicativo</p>
+                          <p className="text-[9px] font-bold opacity-80 uppercase tracking-tighter">Instalação Avançada PWA</p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {isIOS && !isStandalone && (
+                    <div className="mt-6 pt-4 border-t border-slate-100 p-4 bg-blue-50 rounded-2xl border border-blue-100 animate-in fade-in slide-in-from-bottom-2">
+                       <div className="flex gap-3 items-start">
+                         <div className="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center shrink-0">
+                           <Share size={16} />
+                         </div>
+                         <div>
+                           <p className="text-[10px] font-black text-slate-800 uppercase leading-none mb-1">Instalar no iPhone (iOS)</p>
+                           <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Clique no botão "Compartilhar" e depois em "Adicionar à Tela de Início".</p>
+                         </div>
+                       </div>
+                    </div>
                   )}
                   
                   {!discoveredUser && loginMatricula.length < 3 && (
@@ -1722,23 +1763,6 @@ export const App: React.FC = () => {
                           <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight tracking-tighter">Seus dados estão protegidos por criptografia de ponta a ponta.</p>
                         </div>
                       </div>
-
-                      {isInstallable && (
-                        <div className="pt-2 animate-in fade-in zoom-in duration-700">
-                          <button 
-                            onClick={handleInstallClick}
-                            className="w-full py-4 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-2xl flex items-center justify-center gap-3 group hover:bg-emerald-100 transition-all hover:scale-[1.02] active:scale-95 shadow-sm"
-                          >
-                            <div className="w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-md group-hover:rotate-12 transition-transform">
-                              <Download size={16} />
-                            </div>
-                            <div className="text-left">
-                              <p className="text-[10px] font-black uppercase leading-none">Baixar Aplicativo</p>
-                              <p className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">Instalação Avançada PWA</p>
-                            </div>
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
