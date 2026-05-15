@@ -1981,37 +1981,45 @@ export const App: React.FC = () => {
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-relaxed max-w-xs">{loginSystemSubtitle || "Controle de Produção e Gestão Industrial"}</p>
              </div>
 
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <button 
-                  onClick={() => { setEditingEntry(null); setIsModalOpen(true); }}
+                  onClick={() => setIsCollaboratorModalOpen(true)}
                   className="bg-blue-600 p-6 rounded-[2.5rem] text-white flex flex-col items-center gap-4 shadow-xl shadow-blue-100 active:scale-95 transition-all group"
                 >
-                   <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Plus size={32} /></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest">Lançar Produção</span>
+                   <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><UserPlus size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-center">Cadastrar Colaborador</span>
                 </button>
 
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => exportPersonnelToPDF()}
                   className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
                 >
-                   <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Activity size={32} /></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Indicadores</span>
+                   <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><FileText size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Baixar PDF Pessoal</span>
                 </button>
 
                 <button 
-                  onClick={() => setActiveTab('personnel')}
+                  onClick={() => setIsHistoryModalOpen(true)}
                   className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
                 >
-                   <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Users size={32} /></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gestão Pessoal</span>
+                   <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><History size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Histórico Pessoal</span>
                 </button>
 
                 <button 
-                  onClick={() => setIsSettingsModalOpen(true)}
+                  onClick={() => setIsDatabaseModalOpen(true)}
                   className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group"
                 >
-                   <div className="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Settings size={32} /></div>
-                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Configurações</span>
+                   <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><Database size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Banco de Dados</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsTrainingModalOpen(true)}
+                  className="bg-white p-6 rounded-[2.5rem] border border-slate-100 text-slate-800 flex flex-col items-center gap-4 shadow-sm active:scale-95 transition-all group col-span-2 lg:col-span-1"
+                >
+                   <div className="w-14 h-14 bg-slate-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform"><FileText size={32} /></div>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Treinamento / DDP</span>
                 </button>
              </div>
 
