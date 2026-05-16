@@ -14,7 +14,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 import html2canvas from 'html2canvas';
-import { db, auth, OperationType, handleFirestoreError, seedInitialData } from './lib/firebase';
+import { db, auth, messaging, OperationType, handleFirestoreError, seedInitialData } from './lib/firebase';
+import { getToken } from 'firebase/messaging';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions, TrainingRecord, TrainingTemplate } from './types';
@@ -197,6 +198,37 @@ export const App: React.FC = () => {
       if (user) {
         setCurrentUser(user);
         setIsAuthenticated(true);
+        // Register for push notifications
+        if (messaging) {
+          const setupPush = async () => {
+            try {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted') {
+                // Busca a chave VAPID configurada nas variáveis de ambiente
+                const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+                
+                if (!vapidKey) {
+                  console.warn('PWA: VITE_FIREBASE_VAPID_KEY não está configurada.');
+                  return;
+                }
+
+                const token = await getToken(messaging, { vapidKey });
+                
+                if (token) {
+                  await setDoc(doc(db, 'fcm_tokens', user.uid), {
+                    userId: user.uid,
+                    token: token,
+                    updatedAt: new Date().toISOString()
+                  });
+                  console.log('PWA: FCM Token registrado com sucesso');
+                }
+              }
+            } catch (error) {
+              console.warn('PWA: Erro ao registrar notificações push:', error);
+            }
+          };
+          setupPush();
+        }
       } else {
         signInAnonymously(auth).catch(console.error);
       }
@@ -2817,6 +2849,24 @@ export const App: React.FC = () => {
           
           if (isNew) {
             addNotification(`Novo lançamento realizado por ${entry.operator} na ${entry.machine}`);
+            // Trigger push notifications
+            try {
+              const tokensSnap = await getDocs(collection(db, 'fcm_tokens'));
+              const tokens = tokensSnap.docs.map(d => d.data().token);
+              
+              const title = `Novo Lançamento: ${entry.machine}`;
+              const body = `${entry.operator} lançou produção para ${entry.product}.`;
+
+              for (const token of tokens) {
+                fetch('/api/send-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ token, title, body })
+                }).catch(e => console.error('Push failed for token', token, e));
+              }
+            } catch (err) {
+              console.error("Error triggering push notifications:", err);
+            }
           }
         } catch (error) {
           console.error("Erro ao salvar:", error);
@@ -3679,6 +3729,19 @@ const SettingsModal: React.FC<{
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Bell size={20} className="text-blue-600" />
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Notificações Push (PWA)</p>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-600 leading-relaxed">
+                    O sistema agora suporta notificações push mesmo com o aplicativo fechado. Para funcionar, é necessário configurar a <code className="bg-blue-100 px-1 rounded">FIREBASE_SERVICE_ACCOUNT</code> e <code className="bg-blue-100 px-1 rounded">VITE_FIREBASE_VAPID_KEY</code> nas configurações.
+                  </p>
+                  <p className="text-[9px] font-medium text-slate-400 italic">
+                    Nota: O erro "[vite] fail to connect" no console é normal. Certifique-se de permitir as notificações no seu navegador e "Instalar" o App como PWA.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

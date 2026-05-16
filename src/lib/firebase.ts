@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getMessaging, Messaging } from 'firebase/messaging';
 import { 
   initializeFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, getDocs, deleteDoc,
   persistentLocalCache, persistentMultipleTabManager, getDocFromServer
@@ -7,6 +8,14 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
+
+// Inicialização do Messaging (Client-Side) - Apenas se suportado pelo navegador
+export let messaging: Messaging | null = null;
+try {
+  messaging = getMessaging(app);
+} catch (e) {
+  console.warn("Firebase Messaging não é suportado neste navegador.");
+}
 
 // Inicialização robusta do Firestore com cache persistente e long polling para melhor conectividade
 export const db = initializeFirestore(app, {

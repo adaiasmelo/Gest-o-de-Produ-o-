@@ -113,6 +113,16 @@
         "participants": { "type": "array" },
         "createdAt": { "type": "string" }
       }
+    },
+    "FcmToken": {
+      "title": "FCM Token",
+      "description": "Token for push notifications.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "token": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -124,6 +134,7 @@
     "shifts": { "schema": "object", "description": "Available shifts" },
     "collaborators": { "schema": "Collaborator", "description": "Central database of collaborators" },
     "training_records": { "schema": "TrainingRecord", "description": "Saved training forms" },
-    "training_template": { "schema": "TrainingTemplate", "description": "Layout configuration for training PDF" }
+    "training_template": { "schema": "TrainingTemplate", "description": "Layout configuration for training PDF" },
+    "fcm_tokens": { "schema": "FcmToken", "description": "Push notification tokens" }
   }
 }
