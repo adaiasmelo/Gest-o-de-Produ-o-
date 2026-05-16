@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import html2canvas from 'html2canvas';
 import { db, auth, messaging, OperationType, handleFirestoreError, seedInitialData } from './lib/firebase';
-import { getToken } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 import { ProductionEntry, Shift, Employee, Collaborator, PersonnelLog, SystemUser, UserPermissions, TrainingRecord, TrainingTemplate } from './types';
@@ -200,6 +200,13 @@ export const App: React.FC = () => {
         setIsAuthenticated(true);
         // Register for push notifications
         if (messaging) {
+          onMessage(messaging, (payload) => {
+            console.log('PWA: Notificação recebida em primeiro plano:', payload);
+            if (payload.notification) {
+              addNotification(`${payload.notification.title}: ${payload.notification.body}`);
+            }
+          });
+
           const setupPush = async () => {
             try {
               const permission = await Notification.requestPermission();
@@ -281,11 +288,21 @@ export const App: React.FC = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
+    // Limpar badge ao focar na janela
+    const clearBadge = () => {
+      if ('clearAppBadge' in navigator) {
+        (navigator as any).clearAppBadge().catch(console.error);
+      }
+    };
+    window.addEventListener('focus', clearBadge);
+    clearBadge();
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('focus', clearBadge);
     };
   }, []);
 

@@ -23,35 +23,38 @@ async function startServer() {
         saString = saString.slice(1, -1).trim();
       }
 
-      // Sometimes env vars handle newlines differently or escape them
-      saString = saString.replace(/\\n/g, '\n');
-
       let serviceAccount;
       try {
         serviceAccount = JSON.parse(saString);
       } catch (parseError) {
-        // Fallback: Tenta extrair apenas o conteúdo entre as chaves { } 
-        // caso o sistema tenha concatenado algo estranho no início ou fim
         const start = saString.indexOf('{');
         const end = saString.lastIndexOf('}');
+        
         if (start !== -1 && end !== -1 && end > start) {
           const possibleJson = saString.slice(start, end + 1);
-          serviceAccount = JSON.parse(possibleJson);
+          try {
+            serviceAccount = JSON.parse(possibleJson);
+          } catch (secondError) {
+            console.error("JSON extraction failed. Sample of problematic string:", saString.substring(0, 100) + "...");
+            throw secondError;
+          }
         } else {
           throw parseError;
         }
       }
 
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-      console.log("Firebase Admin initialized successfully");
+      if (admin.apps.length === 0) {
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount)
+        });
+        console.log("Firebase Admin initialized successfully");
+      }
     } else {
       console.warn("FIREBASE_SERVICE_ACCOUNT not found.");
     }
   } catch (error) {
     console.error("FIREBASE_SERVICE_ACCOUNT Error: O valor fornecido não é um JSON válido.");
-    console.error("DICA: Garanta que você colou o conteúdo COMPLETO do arquivo .json, incluindo as chaves { e }.");
+    console.error("DICA: Certifique-se de colar o conteúdo completo (incluindo as chaves { }) do arquivo .json da conta de serviço.");
     console.error("Detalhes do erro:", error instanceof Error ? error.message : String(error));
   }
 
@@ -73,8 +76,21 @@ async function startServer() {
           },
           webpush: {
             notification: {
+              title,
+              body,
               icon: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
-              badge: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png'
+              badge: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+              vibrate: [200, 100, 200],
+              requireInteraction: true,
+              actions: [
+                {
+                  action: 'open',
+                  title: 'Ver Produção'
+                }
+              ]
+            },
+            fcmOptions: {
+              link: '/'
             }
           }
         });

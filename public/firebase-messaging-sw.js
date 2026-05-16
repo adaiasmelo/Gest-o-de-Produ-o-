@@ -18,12 +18,49 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
+  console.log('[firebase-messaging-sw.js] Mensagem recebida em segundo plano: ', payload);
+  
+  const notificationTitle = payload.notification.title || 'Manupackaging';
   const notificationOptions = {
     body: payload.notification.body,
-    icon: payload.notification.icon || '/icon-192x192.png'
+    icon: payload.notification.icon || 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+    badge: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
+    tag: 'production-alert', // Agrupa mensagens repetidas
+    renotify: true, // Notifica novamente mesmo se a tag for a mesma
+    vibrate: [200, 100, 200], // Padrão de vibração
+    data: {
+      url: self.location.origin
+    }
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // Tenta atualizar o contador (Badge) no ícone do app
+  if ('setAppBadge' in navigator) {
+    navigator.setAppBadge().catch(console.error);
+  }
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Ao clicar na notificação, abre o app
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(console.error);
+  }
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        return client.focus();
+      }
+      return clients.openWindow('/');
+    })
+  );
 });
