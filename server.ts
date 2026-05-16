@@ -17,7 +17,18 @@ async function startServer() {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       let saString = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
       
-      // Robust cleaning of surrounding quotes and potential whitespace
+      // Remove escaping if it was double-escaped by the environment
+      if (saString.includes('\\"')) {
+        // If it looks like a escaped JSON string inside a string
+        try {
+          const unescaped = JSON.parse(`"${saString}"`);
+          if (unescaped.startsWith('{')) saString = unescaped;
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // Robust cleaning of surrounding quotes
       while ((saString.startsWith('"') && saString.endsWith('"')) || 
              (saString.startsWith("'") && saString.endsWith("'"))) {
         saString = saString.slice(1, -1).trim();
@@ -27,19 +38,32 @@ async function startServer() {
       try {
         serviceAccount = JSON.parse(saString);
       } catch (parseError) {
-        const start = saString.indexOf('{');
-        const end = saString.lastIndexOf('}');
-        
-        if (start !== -1 && end !== -1 && end > start) {
-          const possibleJson = saString.slice(start, end + 1);
-          try {
-            serviceAccount = JSON.parse(possibleJson);
-          } catch (secondError) {
-            console.error("JSON extraction failed. Sample of problematic string:", saString.substring(0, 100) + "...");
-            throw secondError;
+        // Fallback: Try to clean up raw newlines that might break JSON.parse
+        // (This happens if \n was converted to a real newline in the env var)
+        try {
+          // Attempt to fix common "raw newline in string" issues
+          const cleanedSa = saString.replace(/\n/g, '\\n').replace(/\r/g, '');
+          // But wait, the above might break the actual JSON structure. 
+          // Complex regex to find newlines inside quotes is needed, but let's try a simpler approach.
+          
+          // Try extracting the JSON block again with a more careful parse
+          const start = saString.indexOf('{');
+          const end = saString.lastIndexOf('}');
+          if (start !== -1 && end !== -1 && end > start) {
+            const possibleJson = saString.slice(start, end + 1);
+            // If there are real newlines inside the JSON string values, they MUST be escaped for JSON.parse
+            // This is a common issue with private_key
+            const fixedJson = possibleJson.replace(/([^\\])\n/g, '$1\\n');
+            serviceAccount = JSON.parse(fixedJson);
+          } else {
+            throw parseError;
           }
-        } else {
-          throw parseError;
+        } catch (secondError) {
+          console.error("FIREBASE_SERVICE_ACCOUNT: Falha crítica ao processar JSON.");
+          console.error("Comprimento da string:", saString.length);
+          console.error("Início:", saString.substring(0, 50));
+          console.error("Fim:", saString.substring(saString.length - 50));
+          throw secondError;
         }
       }
 
@@ -74,14 +98,33 @@ async function startServer() {
             title,
             body,
           },
+          android: {
+            priority: 'high',
+            notification: {
+              sound: 'default',
+              clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                badge: 1,
+              },
+            },
+          },
           webpush: {
+            headers: {
+              Urgency: 'high'
+            },
             notification: {
               title,
               body,
               icon: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
               badge: 'https://static.wixstatic.com/media/765089_472b535780514937a09c07be49495392~mv2.png',
-              vibrate: [200, 100, 200],
+              vibrate: [200, 100, 200, 100, 200],
               requireInteraction: true,
+              silent: false,
               actions: [
                 {
                   action: 'open',

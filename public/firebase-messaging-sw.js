@@ -35,7 +35,9 @@ messaging.onBackgroundMessage((payload) => {
 
   // Tenta atualizar o contador (Badge) no ícone do app
   if ('setAppBadge' in navigator) {
-    navigator.setAppBadge().catch(console.error);
+    self.registration.getNotifications().then(notifications => {
+      navigator.setAppBadge(notifications.length + 1).catch(console.error);
+    });
   }
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
